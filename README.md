@@ -2,7 +2,7 @@
 
 Dashboard estatico para GitHub Pages:
 
-https://plcocina.github.io/dashboard-reportes-mensuales/
+https://plcocina.github.io/reportes-mensuales/
 
 ## Como funciona
 
