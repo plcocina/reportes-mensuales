@@ -26,8 +26,7 @@ body {
 }
 
 button,
-select,
-textarea {
+select {
   font: inherit;
 }
 
@@ -135,25 +134,14 @@ button {
 }
 
 .select,
-.textarea {
+.select {
   width: 100%;
   border: 1px solid #cfd6e2;
   border-radius: 7px;
   background: #fbfcfe;
   color: var(--ink);
-}
-
-.select {
   min-height: 42px;
   padding: 0 12px;
-}
-
-.textarea {
-  min-height: 126px;
-  padding: 11px;
-  resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
 }
 
 .section-options {
@@ -249,14 +237,6 @@ button {
   margin: 5px 0 0;
   color: var(--muted);
   font-size: 13px;
-}
-
-.report-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .content {
@@ -400,24 +380,6 @@ tr:last-child td {
   line-height: 1.5;
 }
 
-.request-box {
-  margin-top: 14px;
-  border: 1px solid #cfd6e2;
-  border-radius: 8px;
-  background: #fbfcfe;
-  padding: 12px;
-}
-
-.request-box pre {
-  margin: 0;
-  overflow: auto;
-  color: #26364d;
-  white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.55;
-}
-
 .toast {
   position: fixed;
   right: 18px;
@@ -465,11 +427,6 @@ tr:last-child td {
 
   .report-head {
     display: block;
-  }
-
-  .report-actions {
-    margin: 12px 0 0;
-    justify-content: flex-start;
   }
 
   .kpis {

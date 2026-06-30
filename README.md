@@ -2,7 +2,7 @@
 
 Dashboard estatico para GitHub Pages:
 
-https://plcocina.github.io/reportes-mensuales/
+https://plcocina.github.io/dashboard-reportes-mensuales/
 
 ## Como funciona
 
@@ -40,7 +40,7 @@ Tambien puede funcionar con `Compartir > Cualquier persona con el enlace > Lecto
 3. En GitHub: `Settings > Pages`.
 4. Source: `Deploy from a branch`.
 5. Branch: `main`, folder `/root`.
-6. Abrir `https://plcocina.github.io/reportes-mensuales/`.
+6. Abrir `https://plcocina.github.io/dashboard-reportes-mensuales/`.
 
 ## Catalogo
 
