@@ -164,6 +164,28 @@ function chooseGroupRow(rows) {
   return rows.slice(0, 6).find((row) => row?.some((value) => cleanText(value).includes("materia prima"))) || [];
 }
 
+
+function findColumnInTopRows(rows, names, fallback) {
+  const normalized = names.map((name) => cleanText(name).replace(/\.$/, ""));
+  for (const row of rows.slice(0, 6)) {
+    const index = (row || []).findIndex((cell) => {
+      const h = cleanText(cell).replace(/\s*\([^)]*\)/g, "").replace(/\.$/, "").trim();
+      return normalized.includes(h);
+    });
+    if (index >= 0) return index;
+  }
+  return fallback;
+}
+
+function findGroupStart(rows, groupName) {
+  const group = cleanText(groupName);
+  for (const row of rows.slice(0, 6)) {
+    const index = (row || []).findIndex((cell) => cleanText(cell).includes(group));
+    if (index >= 0) return index;
+  }
+  return -1;
+}
+
 function sum(rows, key) {
   return rows.reduce((total, row) => total + number(row[key]), 0);
 }
@@ -188,13 +210,23 @@ function mode(values) {
 function parseProductionSheet(rows, product, month) {
   const headers = chooseHeaderRow(rows);
   const sectionRow = chooseGroupRow(rows);
-  const stockIniCol = findExactColumn(headers, ["Stock Ini.", "Stock Ini"], 1);
+  const stockIniCol = findColumnInTopRows(rows, ["Stock Ini.", "Stock Ini"], findExactColumn(headers, ["Stock Ini.", "Stock Ini"], 1));
   const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = findColumn(headers, (h) => h.includes("rendimiento"), 6);
-  const stockFinalCol = findExactColumn(headers, ["Stock Final", "Stock Final."], 8);
-  const materiaColumns = findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
+  const stockFinalCol = findColumnInTopRows(rows, ["Stock Final", "Stock Final."], findExactColumn(headers, ["Stock Final", "Stock Final."], 8));
+  let materiaColumns = findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
+  if (!materiaColumns.length) {
+    const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
+    const nextGroup = materiaStart >= 0
+      ? (sectionRow || []).findIndex((value, index) => index > materiaStart && cleanText(value) && !cleanText(value).includes("materia prima"))
+      : -1;
+    const materiaEnd = nextGroup > materiaStart ? nextGroup : Math.min(headers.length, materiaStart + 14);
+    materiaColumns = materiaStart >= 0
+      ? headers.slice(materiaStart, materiaEnd).map((label, offset) => ({ label, index: materiaStart + offset })).filter((item) => cleanText(item.label) && !cleanText(item.label).includes("existencia"))
+      : [];
+  }
 
   let fallbackDay = 1;
   const dailyRows = [];
@@ -421,7 +453,7 @@ function lineChart(rows) {
       const out = Math.abs(row.rendimiento - mean) > sigma;
       const selected = selectedFecha === row.fecha;
       return `
-        <g class="chart-point${selected ? " is-selected" : ""}" data-chart-bar="true" data-section="rendimiento" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)}">
+        <g class="chart-point${selected ? " is-selected" : ""}" data-chart-point="true" data-section="rendimiento" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)}">
           <circle cx="${xFor(index)}" cy="${yFor(row.rendimiento)}" r="${selected ? 7 : out ? 5 : 4}" fill="${out ? "#cb3d3d" : "#6255d9"}" stroke="#fff" stroke-width="2"></circle>
           <title>${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)}</title>
           <text x="${xFor(index)}" y="${height - 12}" text-anchor="middle" font-size="10" fill="#69778a">${row.fecha}</text>
@@ -717,7 +749,7 @@ function bindEvents() {
       }
     });
   });
-  document.querySelectorAll("[data-chart-bar], [data-table-row]").forEach((item) => {
+  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-table-row]").forEach((item) => {
     item.addEventListener("click", (event) => {
       const target = event.currentTarget;
       if (!target.dataset.fecha || !target.dataset.section || target.dataset.section === "materias") return;
