@@ -559,30 +559,12 @@ function reportView(report) {
               ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
               ${selectedDayDetail(report, "pedidos")}
             </section>
-            <section class="panel">
-              <h3 class="panel-title">Tabla de pedidos</h3>
-              ${renderTable(report.pedidos, [
-                { key: "fecha", label: "Día" },
-                { key: "dia", label: "Semana" },
-                { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
-                { key: "stock_ini", label: `Stock ini. (${report.units.stock})`, format: (v) => format(v) },
-                { key: "stock_final", label: `Stock final (${report.units.stock})`, format: (v) => format(v) },
-              ], "pedidos")}
             </section>` : ""}
           ${visible.produccion ? `
             <section class="panel">
               <h3 class="panel-title">Producción por día</h3>
               ${barChart(report.produccion, "produccion", SECTIONS.produccion.color, report.kpis.promedioProduccion, "produccion")}
               ${selectedDayDetail(report, "produccion")}
-            </section>
-            <section class="panel">
-              <h3 class="panel-title">Tabla de producción</h3>
-              ${renderTable(report.produccion, [
-                { key: "fecha", label: "Día" },
-                { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
-                { key: "ollas", label: "Ollas", format: (v) => format(v) },
-                { key: "rendimiento", label: `Rend. (${report.units.rendimiento})`, format: (v) => format(v, 2) },
-              ], "produccion")}
             </section>
             <section class="panel">
               <h3 class="panel-title">Rendimiento diario</h3>
