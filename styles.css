@@ -72,8 +72,28 @@ button {
   font-size: 13px;
 }
 
-.status-pill {
+.menu-toggle {
   margin-left: auto;
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 800;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.menu-toggle:hover,
+.menu-toggle:focus {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
+  outline: none;
+}
+
+.status-pill {
+  margin-left: 0;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -100,6 +120,12 @@ button {
   grid-template-columns: 360px minmax(0, 1fr);
   gap: 18px;
   padding: 18px;
+  transition: grid-template-columns 0.28s ease, gap 0.28s ease;
+}
+
+.shell.is-sidebar-collapsed .layout {
+  grid-template-columns: 0 minmax(0, 1fr);
+  gap: 0;
 }
 
 .sidebar,
@@ -113,9 +139,22 @@ button {
 
 .sidebar {
   align-self: start;
+  width: 360px;
   padding: 16px;
   position: sticky;
   top: 18px;
+  transition: opacity 0.22s ease, transform 0.28s ease, visibility 0.22s ease;
+}
+
+.shell.is-sidebar-collapsed .sidebar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-28px);
+  visibility: hidden;
+}
+
+.shell.is-sidebar-collapsed .main {
+  padding-left: 0;
 }
 
 .field {
@@ -451,6 +490,34 @@ tr:last-child td {
   font-size: 22px;
 }
 
+.report-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+  border: 1px solid #d8dee9;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fbfcfe;
+}
+
+.report-cta h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 16px;
+}
+
+.report-cta p {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.report-cta .button {
+  min-width: 220px;
+}
+
 .error-note {
   margin: 14px 0 0;
   border: 1px solid #f1b6b6;
@@ -484,6 +551,15 @@ tr:last-child td {
 
   .sidebar {
     position: static;
+    width: 100%;
+  }
+
+  .shell.is-sidebar-collapsed .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .shell.is-sidebar-collapsed .sidebar {
+    display: none;
   }
 
   .kpis {
@@ -502,6 +578,7 @@ tr:last-child td {
     flex-wrap: wrap;
   }
 
+  .menu-toggle,
   .status-pill {
     margin-left: 0;
   }
@@ -513,6 +590,15 @@ tr:last-child td {
   .kpis,
   .day-detail {
     grid-template-columns: 1fr;
+  }
+
+  .report-cta {
+    display: grid;
+  }
+
+  .report-cta .button {
+    width: 100%;
+    min-width: 0;
   }
 }
 
@@ -530,4 +616,49 @@ tr:last-child td {
 .chart-point.is-selected circle {
   filter: drop-shadow(0 5px 8px rgba(39, 54, 79, 0.28));
   stroke-width: 3;
+}
+
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .topbar,
+  .sidebar,
+  .report-cta,
+  .toast {
+    display: none !important;
+  }
+
+  .layout {
+    display: block;
+    padding: 0;
+  }
+
+  .main {
+    width: 100%;
+  }
+
+  .report-card,
+  .panel,
+  .kpi,
+  .day-detail-card,
+  .table-wrap {
+    box-shadow: none;
+  }
+
+  .report-card {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .chart {
+    min-height: 240px;
+  }
 }

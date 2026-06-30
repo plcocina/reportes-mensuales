@@ -66,6 +66,7 @@ const state = {
   error: "",
   loading: false,
   selectedDay: null,
+  sidebarCollapsed: false,
 };
 
 function number(value) {
@@ -639,6 +640,13 @@ function reportView(report) {
               ], "materias")}
             </section>` : ""}
         </div>
+        <section class="report-cta">
+          <div>
+            <h3>Reporte listo para compartir</h3>
+            <p>${report.product.name} · ${report.month.name}</p>
+          </div>
+          <button class="button" data-action="download-pdf">Descargar reporte en PDF</button>
+        </section>
       </div>
     </article>`;
 }
@@ -702,13 +710,14 @@ function sidebarView() {
 
 function appView() {
   return `
-    <div class="shell">
+    <div class="shell ${state.sidebarCollapsed ? "is-sidebar-collapsed" : ""}">
       <header class="topbar">
         <div class="brand-mark">PL</div>
         <div>
           <h1 class="brand-title">Dashboard de Producción</h1>
           <p class="brand-subtitle">PL Cocina · Reportes desde Google Sheets</p>
         </div>
+        <button class="menu-toggle" data-action="toggle-sidebar" aria-pressed="${state.sidebarCollapsed}">${state.sidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}</button>
         <div class="status-pill"><span class="status-dot"></span>Sheets publicados</div>
       </header>
       <div class="layout">
@@ -728,6 +737,17 @@ function setToast(message) {
   }, 2600);
 }
 
+
+
+function downloadReportPdf() {
+  if (!state.report) return;
+  const previousTitle = document.title;
+  document.title = `PL Cocina - ${state.report.product.name} - ${state.report.month.name}`;
+  window.print();
+  window.setTimeout(() => {
+    document.title = previousTitle;
+  }, 800);
+}
 
 async function generateReport() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
@@ -782,6 +802,15 @@ function bindEvents() {
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", async (event) => {
       const action = event.currentTarget.dataset.action;
+      if (action === "toggle-sidebar") {
+        state.sidebarCollapsed = !state.sidebarCollapsed;
+        render();
+        return;
+      }
+      if (action === "download-pdf") {
+        downloadReportPdf();
+        return;
+      }
       if (action === "generate") await generateReport();
       if (action === "open-drive") {
         const product = PRODUCTS.find((item) => item.id === state.productId);
