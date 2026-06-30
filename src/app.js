@@ -44,6 +44,7 @@ const state = {
   toast: "",
   error: "",
   loading: false,
+  selectedDay: null,
 };
 
 function number(value) {
@@ -226,17 +227,18 @@ function format(value, digits = 0) {
   });
 }
 
-function barChart(rows, key, color, average) {
+function barChart(rows, key, color, average, section) {
   if (!rows?.length) return "";
-  const width = 900;
-  const height = 260;
-  const pad = { top: 20, right: 16, bottom: 34, left: 42 };
+  const width = 1100;
+  const height = 300;
+  const pad = { top: 22, right: 24, bottom: 38, left: 48 };
   const maxValue = Math.max(...rows.map((row) => number(row[key])), average || 0) * 1.12 || 1;
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
-  const gap = 4;
-  const barW = Math.max(8, chartW / rows.length - gap);
+  const gap = 5;
+  const barW = Math.max(10, chartW / rows.length - gap);
   const avgY = pad.top + chartH - (average / maxValue) * chartH;
+  const selectedFecha = state.selectedDay?.section === section ? state.selectedDay.fecha : null;
 
   const bars = rows
     .map((row, index) => {
@@ -244,11 +246,13 @@ function barChart(rows, key, color, average) {
       const h = (value / maxValue) * chartH;
       const x = pad.left + index * (barW + gap);
       const y = pad.top + chartH - h;
+      const selected = selectedFecha === row.fecha;
       return `
-        <g>
-          <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="${color}"></rect>
+        <g class="chart-bar${selected ? " is-selected" : ""}" data-chart-bar="true" data-section="${section}" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${row.dia} ${row.fecha}: ${format(value)}">
+          <rect class="bar-focus" x="${x - 2}" y="${pad.top}" width="${barW + 4}" height="${chartH}" rx="5"></rect>
+          <rect class="bar-shape" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="${color}"></rect>
           <title>${row.dia} ${row.fecha}: ${format(value)}</title>
-          <text x="${x + barW / 2}" y="${height - 11}" text-anchor="middle" font-size="10" fill="#69778a">${row.fecha}</text>
+          <text x="${x + barW / 2}" y="${height - 12}" text-anchor="middle" font-size="10" fill="#69778a">${row.fecha}</text>
         </g>`;
     })
     .join("");
@@ -303,8 +307,9 @@ function lineChart(rows) {
     </svg>`;
 }
 
-function renderTable(rows, columns) {
+function renderTable(rows, columns, section) {
   if (!rows?.length) return "";
+  const selectedFecha = state.selectedDay?.section === section ? state.selectedDay.fecha : null;
   return `
     <div class="table-wrap">
       <table>
@@ -312,13 +317,45 @@ function renderTable(rows, columns) {
         <tbody>
           ${rows
             .map(
-              (row) => `<tr>${columns
+              (row) => `<tr class="${selectedFecha === row.fecha ? "is-selected" : ""}" data-table-row="true" data-section="${section}" data-fecha="${row.fecha || ""}" tabindex="${row.fecha ? "0" : "-1"}">${columns
                 .map((col) => `<td>${col.format ? col.format(row[col.key], row) : row[col.key]}</td>`)
                 .join("")}</tr>`,
             )
             .join("")}
         </tbody>
       </table>
+    </div>`;
+}
+
+function selectedDayDetail(report, section) {
+  if (state.selectedDay?.section !== section) return "";
+  const fecha = state.selectedDay.fecha;
+  const pedido = report.pedidos.find((row) => row.fecha === fecha);
+  const produccion = report.produccion.find((row) => row.fecha === fecha);
+  const base = section === "pedidos" ? pedido : produccion;
+  if (!base) return "";
+
+  const cards = section === "pedidos"
+    ? [
+        ["Día", `${pedido.dia} ${pedido.fecha}`],
+        ["Pedidos", format(pedido.pedidos)],
+        ["Stock inicial", format(pedido.stock_ini)],
+        ["Stock final", format(pedido.stock_final)],
+      ]
+    : [
+        ["Día", `${produccion.dia} ${produccion.fecha}`],
+        ["Producción", format(produccion.produccion)],
+        ["Ollas", format(produccion.ollas)],
+        ["Rendimiento", format(produccion.rendimiento, 2)],
+      ];
+
+  return `
+    <div class="day-detail">
+      ${cards.map(([label, value]) => `
+        <div class="day-detail-card">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </div>`).join("")}
     </div>`;
 }
 
@@ -341,54 +378,50 @@ function reportView(report) {
           <div class="kpi"><div class="kpi-label">Consistencia</div><div class="kpi-value">${format(report.kpis.cv, 1)}%</div><div class="kpi-note">coeficiente de variación</div></div>
         </section>
 
-        <div class="grid-two">
-          <div>
-            ${visible.pedidos ? `
-              <section class="panel">
-                <h3 class="panel-title">Pedidos por día</h3>
-                ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos)}
-              </section>` : ""}
-            ${visible.produccion ? `
-              <section class="panel">
-                <h3 class="panel-title">Producción por día</h3>
-                ${barChart(report.produccion, "produccion", SECTIONS.produccion.color, report.kpis.promedioProduccion)}
-              </section>
-              <section class="panel">
-                <h3 class="panel-title">Rendimiento diario</h3>
-                ${lineChart(report.produccion)}
-              </section>` : ""}
-          </div>
-          <div>
-            ${visible.pedidos ? `
-              <section class="panel">
-                <h3 class="panel-title">Tabla de pedidos</h3>
-                ${renderTable(report.pedidos, [
-                  { key: "fecha", label: "Día" },
-                  { key: "dia", label: "Semana" },
-                  { key: "pedidos", label: "Pedidos", format: (v) => format(v) },
-                  { key: "stock_ini", label: "Stock ini.", format: (v) => format(v) },
-                  { key: "stock_final", label: "Stock final", format: (v) => format(v) },
-                ])}
-              </section>` : ""}
-            ${visible.produccion ? `
-              <section class="panel">
-                <h3 class="panel-title">Tabla de producción</h3>
-                ${renderTable(report.produccion, [
-                  { key: "fecha", label: "Día" },
-                  { key: "produccion", label: "Producción", format: (v) => format(v) },
-                  { key: "ollas", label: "Ollas", format: (v) => format(v) },
-                  { key: "rendimiento", label: "Rend.", format: (v) => format(v, 2) },
-                ])}
-              </section>` : ""}
-            ${visible.materias ? `
-              <section class="panel">
-                <h3 class="panel-title">Materias primas</h3>
-                ${renderTable(report.materias, [
-                  { key: "insumo", label: "Insumo" },
-                  { key: "total", label: "Total", format: (v) => format(v, 1) },
-                ])}
-              </section>` : ""}
-          </div>
+        <div class="report-stack">
+          ${visible.pedidos ? `
+            <section class="panel">
+              <h3 class="panel-title">Pedidos por día</h3>
+              ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
+              ${selectedDayDetail(report, "pedidos")}
+            </section>
+            <section class="panel">
+              <h3 class="panel-title">Tabla de pedidos</h3>
+              ${renderTable(report.pedidos, [
+                { key: "fecha", label: "Día" },
+                { key: "dia", label: "Semana" },
+                { key: "pedidos", label: "Pedidos", format: (v) => format(v) },
+                { key: "stock_ini", label: "Stock ini.", format: (v) => format(v) },
+                { key: "stock_final", label: "Stock final", format: (v) => format(v) },
+              ], "pedidos")}
+            </section>` : ""}
+          ${visible.produccion ? `
+            <section class="panel">
+              <h3 class="panel-title">Producción por día</h3>
+              ${barChart(report.produccion, "produccion", SECTIONS.produccion.color, report.kpis.promedioProduccion, "produccion")}
+              ${selectedDayDetail(report, "produccion")}
+            </section>
+            <section class="panel">
+              <h3 class="panel-title">Tabla de producción</h3>
+              ${renderTable(report.produccion, [
+                { key: "fecha", label: "Día" },
+                { key: "produccion", label: "Producción", format: (v) => format(v) },
+                { key: "ollas", label: "Ollas", format: (v) => format(v) },
+                { key: "rendimiento", label: "Rend.", format: (v) => format(v, 2) },
+              ], "produccion")}
+            </section>
+            <section class="panel">
+              <h3 class="panel-title">Rendimiento diario</h3>
+              ${lineChart(report.produccion)}
+            </section>` : ""}
+          ${visible.materias ? `
+            <section class="panel">
+              <h3 class="panel-title">Materias primas</h3>
+              ${renderTable(report.materias, [
+                { key: "insumo", label: "Insumo" },
+                { key: "total", label: "Total", format: (v) => format(v, 1) },
+              ], "materias")}
+            </section>` : ""}
         </div>
       </div>
     </article>`;
@@ -497,6 +530,7 @@ async function generateReport() {
   try {
     const rows = await fetchPublishedSheetRows(product, month);
     state.report = parseProductionSheet(rows, product, month);
+    state.selectedDay = null;
     setToast("Reporte leído desde Google Sheets.");
   } catch {
     state.error =
@@ -511,12 +545,14 @@ function bindEvents() {
   document.querySelector("#product")?.addEventListener("change", (event) => {
     state.productId = event.target.value;
     state.report = null;
+    state.selectedDay = null;
     state.error = "";
     render();
   });
   document.querySelector("#month")?.addEventListener("change", (event) => {
     state.monthId = event.target.value;
     state.report = null;
+    state.selectedDay = null;
     state.error = "";
     render();
   });
@@ -538,6 +574,23 @@ function bindEvents() {
       }
     });
   });
+  document.querySelectorAll("[data-chart-bar], [data-table-row]").forEach((item) => {
+    item.addEventListener("click", (event) => {
+      const target = event.currentTarget;
+      if (!target.dataset.fecha || !target.dataset.section || target.dataset.section === "materias") return;
+      state.selectedDay = {
+        section: target.dataset.section,
+        fecha: target.dataset.fecha,
+      };
+      render();
+    });
+    item.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.currentTarget.click();
+    });
+  });
+
 }
 
 function render() {

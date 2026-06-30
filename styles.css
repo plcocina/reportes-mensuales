@@ -285,9 +285,9 @@ button {
   font-size: 12px;
 }
 
-.grid-two {
+.report-stack {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
@@ -311,7 +311,73 @@ button {
 
 .chart {
   width: 100%;
-  min-height: 260px;
+  min-height: 300px;
+  display: block;
+}
+
+.chart-bar {
+  cursor: pointer;
+  outline: none;
+}
+
+.bar-focus {
+  fill: transparent;
+  transition: fill 0.16s ease;
+}
+
+.bar-shape {
+  transition: opacity 0.16s ease, filter 0.16s ease, transform 0.16s ease;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.chart-bar:hover .bar-focus,
+.chart-bar:focus .bar-focus,
+.chart-bar.is-selected .bar-focus {
+  fill: rgba(39, 54, 79, 0.06);
+}
+
+.chart-bar:hover .bar-shape,
+.chart-bar:focus .bar-shape {
+  filter: drop-shadow(0 6px 8px rgba(39, 54, 79, 0.22));
+  opacity: 0.92;
+  transform: scaleY(1.035);
+}
+
+.chart-bar.is-selected .bar-shape {
+  filter: drop-shadow(0 7px 10px rgba(39, 54, 79, 0.3));
+  stroke: #172033;
+  stroke-width: 2;
+}
+
+.day-detail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.day-detail-card {
+  border: 1px solid #dfe5ee;
+  border-radius: 7px;
+  background: #fbfcfe;
+  padding: 10px 12px;
+}
+
+.day-detail-card span {
+  display: block;
+  color: #69778a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.day-detail-card strong {
+  display: block;
+  margin-top: 4px;
+  color: #172033;
+  font-size: 18px;
 }
 
 .table-wrap {
@@ -344,6 +410,22 @@ th {
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+tbody tr {
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+
+tbody tr:hover,
+tbody tr:focus {
+  background: #f7faff;
+  box-shadow: inset 3px 0 0 #8aa8f8;
+  outline: none;
+}
+
+tbody tr.is-selected {
+  background: #eef4ff;
+  box-shadow: inset 3px 0 0 #2563eb;
 }
 
 tr:last-child td {
@@ -396,8 +478,7 @@ tr:last-child td {
 }
 
 @media (max-width: 1040px) {
-  .layout,
-  .grid-two {
+  .layout {
     grid-template-columns: 1fr;
   }
 
@@ -429,7 +510,8 @@ tr:last-child td {
     display: block;
   }
 
-  .kpis {
+  .kpis,
+  .day-detail {
     grid-template-columns: 1fr;
   }
 }
