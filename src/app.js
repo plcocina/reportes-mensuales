@@ -111,8 +111,10 @@ function mode(values) {
 }
 
 function parseProductionSheet(rows, product, month) {
+  const columnHeaders = Array.isArray(rows.__columns) ? rows.__columns : [];
+  const rowHeaders = rows[2] || [];
+  const headers = columnHeaders.some((value) => cleanText(value)) ? columnHeaders : rowHeaders;
   const sectionRow = rows[1] || [];
-  const headers = rows[2] || [];
   const stockIniCol = findColumn(headers, (h) => h.includes("stock ini") && !h.includes("pedidos"), 1);
   const pedidosCol = findColumn(headers, (h) => h.includes("pedidos") && !h.includes("stock ini") && !h.includes("avg"), 2);
   const produccionCol = findColumn(headers, (h) => h.includes("produccion") && !h.includes("control"), 4);
@@ -131,8 +133,10 @@ function parseProductionSheet(rows, product, month) {
 
   let fallbackDay = 1;
   const dailyRows = [];
+  const firstDayIndex = rows.findIndex((row) => splitDay(row?.[0], null));
+  const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
-  for (const row of rows.slice(3, 34)) {
+  for (const row of monthRows) {
     const hasData = [stockIniCol, pedidosCol, produccionCol, ollasCol, rendimientoCol, stockFinalCol]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
@@ -245,6 +249,7 @@ function fetchPublishedSheetRows(product, month) {
         const cells = row.c || [];
         return columns.map((_, index) => googleValue(cells[index]));
       });
+      values.__columns = columns.map((column) => column.label || column.id || "");
       resolve(values);
     };
 
