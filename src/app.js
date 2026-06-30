@@ -53,9 +53,40 @@ function number(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function splitDay(raw) {
-  const [day = "", date = ""] = String(raw).split(",").map((part) => part.trim());
-  return { dia: day, fecha: date.padStart(2, "0") };
+const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+function cleanText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function splitDay(raw, fallbackDay) {
+  if (raw instanceof Date && !Number.isNaN(raw.valueOf())) {
+    return { dia: WEEKDAYS[raw.getDay()], fecha: String(raw.getDate()).padStart(2, "0") };
+  }
+
+  const text = String(raw ?? "").trim();
+  const clean = cleanText(text);
+  if (!clean || /total|promedio|dif\.|moda|stdev/.test(clean)) return null;
+
+  const numberMatch = clean.match(/(?:^|[^0-9])(\d{1,2})(?:[^0-9]|$)/);
+  const dayNumber = numberMatch ? Number(numberMatch[1]) : Number(raw);
+  if (!Number.isFinite(dayNumber) || dayNumber < 1 || dayNumber > 31) {
+    if (!fallbackDay) return null;
+    return { dia: "día", fecha: String(fallbackDay).padStart(2, "0") };
+  }
+
+  const dayName = WEEKDAYS.find((name) => clean.includes(cleanText(name))) || "día";
+  return { dia: dayName, fecha: String(dayNumber).padStart(2, "0") };
+}
+
+function findColumn(headers, matcher, fallback) {
+  const index = headers.findIndex((header) => matcher(cleanText(header)));
+  return index >= 0 ? index : fallback;
 }
 
 function sum(rows, key) {
@@ -80,26 +111,53 @@ function mode(values) {
 }
 
 function parseProductionSheet(rows, product, month) {
+  const sectionRow = rows[1] || [];
   const headers = rows[2] || [];
-  const dailyRows = rows
-    .slice(3)
-    .filter((row) => row[0] && /^\D+,\s*\d{1,2}$/.test(String(row[0]).trim()))
-    .map((row) => {
-      const day = splitDay(row[0]);
-      return {
-        ...day,
-        stock_ini: number(row[1]),
-        pedidos: number(row[2]),
-        produccion: number(row[4]),
-        ollas: number(row[5]),
-        rendimiento: number(row[6]),
-        stock_final: number(row[8]),
-        materias: headers.slice(11, 22).map((label, index) => ({
-          insumo: String(label || `Col ${index + 12}`).replace(/\s+/g, " ").trim(),
-          cantidad: number(row[index + 11]),
-        })),
-      };
+  const stockIniCol = findColumn(headers, (h) => h.includes("stock ini") && !h.includes("pedidos"), 1);
+  const pedidosCol = findColumn(headers, (h) => h.includes("pedidos") && !h.includes("stock ini") && !h.includes("avg"), 2);
+  const produccionCol = findColumn(headers, (h) => h.includes("produccion") && !h.includes("control"), 4);
+  const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
+  const rendimientoCol = findColumn(headers, (h) => h.includes("rendimiento"), 6);
+  const stockFinalCol = findColumn(headers, (h) => h.includes("stock final"), 8);
+  const materiaStart = sectionRow.findIndex((value) => cleanText(value).includes("materia prima"));
+  const materiaEndCandidates = [
+    headers.findIndex((value, index) => index > materiaStart && cleanText(value).includes("existencia")),
+    headers.findIndex((value, index) => index > materiaStart && cleanText(value).includes("dia")),
+  ].filter((index) => index > materiaStart);
+  const materiaEnd = materiaEndCandidates.length ? Math.min(...materiaEndCandidates) : Math.min(headers.length, materiaStart + 12);
+  const materiaColumns = materiaStart >= 0
+    ? headers.slice(materiaStart, materiaEnd).map((label, offset) => ({ label, index: materiaStart + offset })).filter((item) => cleanText(item.label))
+    : headers.slice(11, 22).map((label, offset) => ({ label, index: 11 + offset })).filter((item) => cleanText(item.label));
+
+  let fallbackDay = 1;
+  const dailyRows = [];
+
+  for (const row of rows.slice(3)) {
+    const first = cleanText(row[0]);
+    if (/total|promedio|dif\.|moda|stdev/.test(first)) break;
+
+    const hasData = [stockIniCol, pedidosCol, produccionCol, ollasCol, rendimientoCol, stockFinalCol]
+      .some((index) => row[index] !== undefined && row[index] !== "");
+    if (!hasData) continue;
+
+    const day = splitDay(row[0], fallbackDay);
+    if (!day) continue;
+    fallbackDay = Number(day.fecha) + 1;
+
+    dailyRows.push({
+      ...day,
+      stock_ini: number(row[stockIniCol]),
+      pedidos: number(row[pedidosCol]),
+      produccion: number(row[produccionCol]),
+      ollas: number(row[ollasCol]),
+      rendimiento: number(row[rendimientoCol]),
+      stock_final: number(row[stockFinalCol]),
+      materias: materiaColumns.map(({ label, index }) => ({
+        insumo: String(label || `Col ${index + 1}`).replace(/\s+/g, " ").trim(),
+        cantidad: number(row[index]),
+      })),
     });
+  }
 
   const totalPedidos = sum(dailyRows, "pedidos");
   const totalProduccion = sum(dailyRows, "produccion");
@@ -107,13 +165,13 @@ function parseProductionSheet(rows, product, month) {
   const rendimientos = dailyRows.map((row) => row.rendimiento).filter(Boolean);
   const rendimientoPromedio = avg(dailyRows.filter((row) => row.rendimiento), "rendimiento");
   const [modaProduccion, modaOcasiones] = mode(dailyRows.map((row) => row.produccion));
-  const topPedido = [...dailyRows].sort((a, b) => b.pedidos - a.pedidos)[0];
-  const topProduccion = [...dailyRows].sort((a, b) => b.produccion - a.produccion)[0];
+  const topPedido = [...dailyRows].sort((a, b) => b.pedidos - a.pedidos)[0] || { pedidos: 0, dia: "", fecha: "" };
+  const topProduccion = [...dailyRows].sort((a, b) => b.produccion - a.produccion)[0] || { produccion: 0, dia: "", fecha: "" };
   const lowRendimiento = [...dailyRows].filter((row) => row.rendimiento).sort((a, b) => a.rendimiento - b.rendimiento)[0];
   const highRendimiento = [...dailyRows].filter((row) => row.rendimiento).sort((a, b) => b.rendimiento - a.rendimiento)[0];
 
-  const materiaTotals = headers.slice(11, 22).map((label, index) => ({
-    insumo: String(label || `Col ${index + 12}`).replace(/\s+/g, " ").trim(),
+  const materiaTotals = materiaColumns.map(({ label }, index) => ({
+    insumo: String(label || `Insumo ${index + 1}`).replace(/\s+/g, " ").trim(),
     total: dailyRows.reduce((total, row) => total + number(row.materias[index]?.cantidad), 0),
   }));
 
@@ -261,8 +319,9 @@ function barChart(rows, key, color, average, section) {
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfica de ${key}">
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
       <line x1="${pad.left}" x2="${pad.left}" y1="${pad.top}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
-      <line x1="${pad.left}" x2="${width - pad.right}" y1="${avgY}" y2="${avgY}" stroke="#8a94a6" stroke-dasharray="5 5"></line>
-      <text x="${width - pad.right}" y="${avgY - 6}" text-anchor="end" font-size="11" fill="#69778a">Media ${format(average, 1)}</text>
+      <line x1="${pad.left}" x2="${width - pad.right}" y1="${avgY}" y2="${avgY}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
+      <rect x="${width - pad.right - 112}" y="${avgY - 24}" width="108" height="22" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
+      <text x="${width - pad.right - 58}" y="${avgY - 9}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Media ${format(average, 1)}</text>
       ${bars}
     </svg>`;
 }
