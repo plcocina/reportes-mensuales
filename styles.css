@@ -515,3 +515,19 @@ tr:last-child td {
     grid-template-columns: 1fr;
   }
 }
+
+.chart-point {
+  cursor: pointer;
+  outline: none;
+}
+
+.chart-point circle {
+  transition: r 0.16s ease, filter 0.16s ease, stroke-width 0.16s ease;
+}
+
+.chart-point:hover circle,
+.chart-point:focus circle,
+.chart-point.is-selected circle {
+  filter: drop-shadow(0 5px 8px rgba(39, 54, 79, 0.28));
+  stroke-width: 3;
+}

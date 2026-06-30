@@ -36,6 +36,27 @@ const SECTIONS = {
 };
 
 
+const PRODUCT_UNITS = {
+  "01": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
+  "02": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
+  "03": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/olla" },
+  "04": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
+  "05": { pedido: "bolsas / kg", produccion: "bolsas / kg", stock: "bolsas", rendimiento: "prod." },
+  "06": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
+  "07": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
+  "08": { pedido: "bidones / lt", produccion: "bidones / lt", stock: "bidones", rendimiento: "lt/bidón" },
+  "09": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
+  "10": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
+  "11": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
+  "12": { pedido: "cajas", produccion: "cajas", stock: "cajas", rendimiento: "cajas/prod." },
+  "13": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
+};
+
+function unitsFor(product) {
+  return PRODUCT_UNITS[product?.id] || { pedido: "unidades", produccion: "unidades", stock: "unidades", rendimiento: "prod." };
+}
+
+
 const state = {
   productId: "",
   monthId: "",
@@ -89,6 +110,60 @@ function findColumn(headers, matcher, fallback) {
   return index >= 0 ? index : fallback;
 }
 
+function findExactColumn(headers, names, fallback) {
+  const normalized = names.map(cleanText);
+  const index = headers.findIndex((header) => {
+    const h = cleanText(header).replace(/\s*\([^)]*\)/g, "").replace(/\.$/, "").trim();
+    return normalized.map((name) => name.replace(/\.$/, "")).includes(h);
+  });
+  return index >= 0 ? index : fallback;
+}
+
+function findGroupedColumns(headers, groupRow, groupName) {
+  const groups = groupRow.map(cleanText);
+  const group = cleanText(groupName);
+  let start = groups.findIndex((value) => value.includes(group));
+  if (start < 0) return [];
+  let end = groupRow.length;
+  for (let index = start + 1; index < groupRow.length; index += 1) {
+    const value = cleanText(groupRow[index]);
+    if (value && !value.includes(group)) {
+      end = index;
+      break;
+    }
+  }
+  return headers
+    .slice(start, end)
+    .map((label, offset) => ({ label, index: start + offset }))
+    .filter((item) => cleanText(item.label) && !cleanText(item.label).includes("existencia"));
+}
+
+function findMetricColumn(headers, includeWords, excludeWords = [], fallback = -1) {
+  const index = headers.findIndex((header) => {
+    const h = cleanText(header);
+    return includeWords.every((word) => h.includes(cleanText(word))) && !excludeWords.some((word) => h.includes(cleanText(word)));
+  });
+  return index >= 0 ? index : fallback;
+}
+
+
+function headerScore(row) {
+  const joined = row.map(cleanText).join(" | ");
+  return ["stock ini", "pedidos", "produccion", "stock final", "rendimiento"]
+    .reduce((score, word) => score + (joined.includes(word) ? 1 : 0), 0);
+}
+
+function chooseHeaderRow(rows) {
+  const candidates = [];
+  if (Array.isArray(rows.__columns)) candidates.push(rows.__columns);
+  rows.slice(0, 6).forEach((row) => candidates.push(row || []));
+  return candidates.sort((a, b) => headerScore(b) - headerScore(a))[0] || [];
+}
+
+function chooseGroupRow(rows) {
+  return rows.slice(0, 6).find((row) => row?.some((value) => cleanText(value).includes("materia prima"))) || [];
+}
+
 function sum(rows, key) {
   return rows.reduce((total, row) => total + number(row[key]), 0);
 }
@@ -111,25 +186,15 @@ function mode(values) {
 }
 
 function parseProductionSheet(rows, product, month) {
-  const columnHeaders = Array.isArray(rows.__columns) ? rows.__columns : [];
-  const rowHeaders = rows[2] || [];
-  const headers = columnHeaders.some((value) => cleanText(value)) ? columnHeaders : rowHeaders;
-  const sectionRow = rows[1] || [];
-  const stockIniCol = findColumn(headers, (h) => h.includes("stock ini") && !h.includes("pedidos"), 1);
-  const pedidosCol = findColumn(headers, (h) => h.includes("pedidos") && !h.includes("stock ini") && !h.includes("avg"), 2);
-  const produccionCol = findColumn(headers, (h) => h.includes("produccion") && !h.includes("control"), 4);
+  const headers = chooseHeaderRow(rows);
+  const sectionRow = chooseGroupRow(rows);
+  const stockIniCol = findExactColumn(headers, ["Stock Ini.", "Stock Ini"], 1);
+  const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
+  const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = findColumn(headers, (h) => h.includes("rendimiento"), 6);
-  const stockFinalCol = findColumn(headers, (h) => h.includes("stock final"), 8);
-  const materiaStart = sectionRow.findIndex((value) => cleanText(value).includes("materia prima"));
-  const materiaEndCandidates = [
-    headers.findIndex((value, index) => index > materiaStart && cleanText(value).includes("existencia")),
-    headers.findIndex((value, index) => index > materiaStart && cleanText(value).includes("dia")),
-  ].filter((index) => index > materiaStart);
-  const materiaEnd = materiaEndCandidates.length ? Math.min(...materiaEndCandidates) : Math.min(headers.length, materiaStart + 12);
-  const materiaColumns = materiaStart >= 0
-    ? headers.slice(materiaStart, materiaEnd).map((label, offset) => ({ label, index: materiaStart + offset })).filter((item) => cleanText(item.label))
-    : headers.slice(11, 22).map((label, offset) => ({ label, index: 11 + offset })).filter((item) => cleanText(item.label));
+  const stockFinalCol = findExactColumn(headers, ["Stock Final", "Stock Final."], 8);
+  const materiaColumns = findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
 
   let fallbackDay = 1;
   const dailyRows = [];
@@ -159,6 +224,7 @@ function parseProductionSheet(rows, product, month) {
     });
   }
 
+  const units = unitsFor(product);
   const totalPedidos = sum(dailyRows, "pedidos");
   const totalProduccion = sum(dailyRows, "produccion");
   const totalOllas = sum(dailyRows, "ollas");
@@ -184,9 +250,9 @@ function parseProductionSheet(rows, product, month) {
     month,
     generatedAt: new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }),
     summary:
-      `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} cubetas pedidas y ` +
-      `${totalProduccion.toLocaleString("es-MX")} cubetas producidas en ${totalOllas.toLocaleString("es-MX")} ollas. ` +
-      `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} cub/olla con ${consistency} ` +
+      `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
+      `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
+      `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} ${units.rendimiento} con ${consistency} ` +
       `(CV ${cv.toFixed(1)}%). El mayor pedido fue ${topPedido.pedidos} cub el ${topPedido.dia} ${topPedido.fecha}; ` +
       `la mayor producción fue ${topProduccion.produccion} cub el ${topProduccion.dia} ${topProduccion.fecha}.`,
     kpis: {
@@ -206,6 +272,7 @@ function parseProductionSheet(rows, product, month) {
     pedidos: dailyRows.map(({ dia, fecha, pedidos, stock_ini, stock_final }) => ({ dia, fecha, pedidos, stock_ini, stock_final })),
     produccion: dailyRows.map(({ dia, fecha, produccion, ollas, rendimiento }) => ({ dia, fecha, produccion, ollas, rendimiento })),
     materias: materiaTotals,
+    units,
   };
 }
 
@@ -331,12 +398,13 @@ function barChart(rows, key, color, average, section) {
 function lineChart(rows) {
   const valid = rows.filter((row) => row.rendimiento);
   if (valid.length < 2) return "";
-  const width = 900;
-  const height = 240;
-  const pad = { top: 20, right: 16, bottom: 32, left: 42 };
+  const width = 1100;
+  const height = 280;
+  const pad = { top: 36, right: 24, bottom: 38, left: 48 };
   const values = valid.map((row) => row.rendimiento);
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const sigma = std(values);
+  const cv = mean ? (sigma / mean) * 100 : 0;
   const min = Math.min(...values, mean - sigma) - 0.08;
   const max = Math.max(...values, mean + sigma) + 0.08;
   const chartW = width - pad.left - pad.right;
@@ -346,25 +414,29 @@ function lineChart(rows) {
   const path = valid.map((row, index) => `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(row.rendimiento)}`).join(" ");
   const bandTop = yFor(mean + sigma);
   const bandBottom = yFor(mean - sigma);
+  const selectedFecha = state.selectedDay?.section === "rendimiento" ? state.selectedDay.fecha : null;
 
   const dots = valid
     .map((row, index) => {
       const out = Math.abs(row.rendimiento - mean) > sigma;
+      const selected = selectedFecha === row.fecha;
       return `
-        <circle cx="${xFor(index)}" cy="${yFor(row.rendimiento)}" r="${out ? 5 : 3.5}" fill="${out ? "#cb3d3d" : "#6255d9"}" stroke="#fff" stroke-width="2">
-          <title>${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)} cub/olla</title>
-        </circle>
-        <text x="${xFor(index)}" y="${height - 10}" text-anchor="middle" font-size="10" fill="#69778a">${row.fecha}</text>`;
+        <g class="chart-point${selected ? " is-selected" : ""}" data-chart-bar="true" data-section="rendimiento" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)}">
+          <circle cx="${xFor(index)}" cy="${yFor(row.rendimiento)}" r="${selected ? 7 : out ? 5 : 4}" fill="${out ? "#cb3d3d" : "#6255d9"}" stroke="#fff" stroke-width="2"></circle>
+          <title>${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)}</title>
+          <text x="${xFor(index)}" y="${height - 12}" text-anchor="middle" font-size="10" fill="#69778a">${row.fecha}</text>
+        </g>`;
     })
     .join("");
 
   return `
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
       <rect x="${pad.left}" y="${bandTop}" width="${chartW}" height="${bandBottom - bandTop}" fill="#6255d9" opacity="0.08"></rect>
-      <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#8a94a6" stroke-dasharray="5 5"></line>
+      <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
+      <rect x="${width - pad.right - 180}" y="${pad.top - 30}" width="176" height="24" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
+      <text x="${width - pad.right - 92}" y="${pad.top - 13}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
       <path d="${path}" fill="none" stroke="#6255d9" stroke-width="3"></path>
       ${dots}
-      <text x="${width - pad.right}" y="${yFor(mean) - 6}" text-anchor="end" font-size="11" fill="#69778a">Prom. ${mean.toFixed(2)} · CV ${((sigma / mean) * 100).toFixed(1)}%</text>
     </svg>`;
 }
 
@@ -393,21 +465,30 @@ function selectedDayDetail(report, section) {
   const fecha = state.selectedDay.fecha;
   const pedido = report.pedidos.find((row) => row.fecha === fecha);
   const produccion = report.produccion.find((row) => row.fecha === fecha);
-  const base = section === "pedidos" ? pedido : produccion;
+  const rendimiento = report.produccion.find((row) => row.fecha === fecha);
+  const base = section === "pedidos" ? pedido : section === "rendimiento" ? rendimiento : produccion;
   if (!base) return "";
+  const units = report.units || unitsFor(report.product);
 
   const cards = section === "pedidos"
     ? [
         ["Día", `${pedido.dia} ${pedido.fecha}`],
-        ["Pedidos", format(pedido.pedidos)],
-        ["Stock inicial", format(pedido.stock_ini)],
-        ["Stock final", format(pedido.stock_final)],
+        ["Pedidos", `${format(pedido.pedidos)} ${units.pedido}`],
+        ["Stock inicial", `${format(pedido.stock_ini)} ${units.stock}`],
+        ["Stock final", `${format(pedido.stock_final)} ${units.stock}`],
+      ]
+    : section === "rendimiento"
+    ? [
+        ["Día", `${rendimiento.dia} ${rendimiento.fecha}`],
+        ["Rendimiento", `${format(rendimiento.rendimiento, 2)} ${units.rendimiento}`],
+        ["Producción", `${format(rendimiento.produccion)} ${units.produccion}`],
+        ["Ollas", format(rendimiento.ollas)],
       ]
     : [
         ["Día", `${produccion.dia} ${produccion.fecha}`],
-        ["Producción", format(produccion.produccion)],
+        ["Producción", `${format(produccion.produccion)} ${units.produccion}`],
         ["Ollas", format(produccion.ollas)],
-        ["Rendimiento", format(produccion.rendimiento, 2)],
+        ["Rendimiento", `${format(produccion.rendimiento, 2)} ${units.rendimiento}`],
       ];
 
   return `
@@ -433,9 +514,9 @@ function reportView(report) {
       <div class="content">
         <p class="summary">${report.summary}</p>
         <section class="kpis">
-          <div class="kpi"><div class="kpi-label">Pedidos</div><div class="kpi-value">${format(report.kpis.totalPedidos)}</div><div class="kpi-note">cubetas del mes</div></div>
-          <div class="kpi"><div class="kpi-label">Producción</div><div class="kpi-value">${format(report.kpis.totalProduccion)}</div><div class="kpi-note">${format(report.kpis.totalOllas)} ollas</div></div>
-          <div class="kpi"><div class="kpi-label">Rendimiento</div><div class="kpi-value">${format(report.kpis.rendimientoPromedio, 2)}</div><div class="kpi-note">cubetas por olla</div></div>
+          <div class="kpi"><div class="kpi-label">Pedidos</div><div class="kpi-value">${format(report.kpis.totalPedidos)}</div><div class="kpi-note">${report.units.pedido} del mes</div></div>
+          <div class="kpi"><div class="kpi-label">Producción</div><div class="kpi-value">${format(report.kpis.totalProduccion)}</div><div class="kpi-note">${report.units.produccion}</div></div>
+          <div class="kpi"><div class="kpi-label">Rendimiento</div><div class="kpi-value">${format(report.kpis.rendimientoPromedio, 2)}</div><div class="kpi-note">${report.units.rendimiento}</div></div>
           <div class="kpi"><div class="kpi-label">Consistencia</div><div class="kpi-value">${format(report.kpis.cv, 1)}%</div><div class="kpi-note">coeficiente de variación</div></div>
         </section>
 
@@ -451,9 +532,9 @@ function reportView(report) {
               ${renderTable(report.pedidos, [
                 { key: "fecha", label: "Día" },
                 { key: "dia", label: "Semana" },
-                { key: "pedidos", label: "Pedidos", format: (v) => format(v) },
-                { key: "stock_ini", label: "Stock ini.", format: (v) => format(v) },
-                { key: "stock_final", label: "Stock final", format: (v) => format(v) },
+                { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
+                { key: "stock_ini", label: `Stock ini. (${report.units.stock})`, format: (v) => format(v) },
+                { key: "stock_final", label: `Stock final (${report.units.stock})`, format: (v) => format(v) },
               ], "pedidos")}
             </section>` : ""}
           ${visible.produccion ? `
@@ -466,14 +547,15 @@ function reportView(report) {
               <h3 class="panel-title">Tabla de producción</h3>
               ${renderTable(report.produccion, [
                 { key: "fecha", label: "Día" },
-                { key: "produccion", label: "Producción", format: (v) => format(v) },
+                { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
                 { key: "ollas", label: "Ollas", format: (v) => format(v) },
-                { key: "rendimiento", label: "Rend.", format: (v) => format(v, 2) },
+                { key: "rendimiento", label: `Rend. (${report.units.rendimiento})`, format: (v) => format(v, 2) },
               ], "produccion")}
             </section>
             <section class="panel">
               <h3 class="panel-title">Rendimiento diario</h3>
               ${lineChart(report.produccion)}
+              ${selectedDayDetail(report, "rendimiento")}
             </section>` : ""}
           ${visible.materias ? `
             <section class="panel">
