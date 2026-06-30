@@ -35,48 +35,12 @@ const SECTIONS = {
   materias: { label: "Materias Primas", color: "#108a63", unit: "" },
 };
 
-const SAMPLE_ROWS = [
-  ["", "SALSA VERDE - CONTROL DE PRODUCCIÓN"],
-  ["", "Stock Ini.\n(Cub.)", "PRODUCCIÓN", "", "", "", "", "SOBRANTES", "", "", "Cambios / devoluciones\n(Cub.)", "MATERIA PRIMA"],
-  ["abril", "", "(-)Pedidos \n(Cub.)", "Stock Ini (-) Pedidos", "(+)Producción (Cub.)", "Ollas", "RENDIMIENTO \nCub. x Olla", "Sobrante Prod. \n(KG)", "Stock Final \n(Cub.)", "Cubeta de sobrantes (KG)", "", "Pulpa \n(Bolsas)", "Serrano \n(KG)", "Jp. Cocido (KG)", "Tomate V. \n(KG)", "Tomatillo \n(KG)", "Cilantro (KG)", "Sal \n(KG)", "Hielo \n(KG)", "Agua \n(LT)", "Agua chile \n(LT)", "Aceite \n(LT)", "Existencia pulpa final"],
-  ["miércoles, 01", "1", "136", "-135", "139", "25", "5.56", "16", "4", "0", "0", "175", "17.5", "87.5", "512.5", "175.0", "62.5", "35.0", "500.0", "400.0", "100.0", "62.5", "0"],
-  ["jueves, 02", "4", "174", "-170", "172", "31", "5.55", "7", "2", "0", "0", "217", "21.7", "108.5", "635.5", "217.0", "77.5", "43.4", "620.0", "496.0", "124.0", "77.5", "0"],
-  ["viernes, 03", "2", "168", "-166", "170", "31", "5.48", "0", "4", "0", "0", "217", "21.7", "108.5", "635.5", "217.0", "77.5", "43.4", "620.0", "496.0", "124.0", "77.5", "0"],
-  ["sábado, 04", "4", "149", "-145", "145", "26", "5.58", "16", "0", "0", "0", "182", "18.2", "91.0", "533.0", "182.0", "65.0", "36.4", "520.0", "416.0", "104.0", "65.0", "0"],
-  ["domingo, 05", "0", "137", "-137", "140", "25", "5.60", "8", "3", "0", "0", "175", "17.5", "87.5", "512.5", "175.0", "62.5", "35.0", "500.0", "400.0", "100.0", "62.5", "0"],
-  ["lunes, 06", "3", "100", "-97", "100", "18", "5.56", "10", "3", "0", "0", "126", "12.6", "63.0", "369.0", "126.0", "45.0", "25.2", "360.0", "288.0", "72.0", "45.0", "0"],
-  ["martes, 07", "3", "124", "-121", "125", "22", "5.68", "0", "4", "0", "0", "154", "15.4", "77.0", "451.0", "154.0", "55.0", "30.8", "440.0", "352.0", "88.0", "55.0", "0"],
-  ["miércoles, 08", "4", "125", "-121", "122", "22", "5.55", "17", "1", "0", "0", "154", "15.4", "77.0", "451.0", "154.0", "55.0", "30.8", "440.0", "352.0", "88.0", "55.0", "0"],
-  ["jueves, 09", "1", "119", "-118", "122", "21", "5.81", "10", "4", "0", "0", "147", "14.7", "73.5", "430.5", "147.0", "52.5", "29.4", "420.0", "336.0", "84.0", "52.5", "0"],
-  ["viernes, 10", "4", "132", "-128", "130", "23", "5.65", "4", "2", "0", "0", "161", "16.1", "80.5", "471.5", "161.0", "57.5", "32.2", "460.0", "368.0", "92.0", "57.5", "0"],
-  ["sábado, 11", "2", "158", "-156", "156", "27", "5.78", "6", "0", "0", "0", "189", "18.9", "94.5", "553.5", "189.0", "67.5", "37.8", "540.0", "432.0", "108.0", "67.5", "0"],
-  ["domingo, 12", "0", "167", "-167", "167", "30", "5.57", "12", "5", "0", "0", "210", "21.0", "105.0", "615.0", "210.0", "75.0", "42.0", "600.0", "480.0", "120.0", "75.0", "0"],
-  ["lunes, 13", "5", "110", "-105", "108", "19", "5.68", "14", "3", "0", "0", "133", "13.3", "66.5", "389.5", "133.0", "47.5", "26.6", "380.0", "304.0", "76.0", "47.5", "0"],
-  ["martes, 14", "3", "110", "-107", "109", "19", "5.74", "6", "2", "2", "0", "133", "13.3", "66.5", "389.5", "133.0", "47.5", "26.6", "380.0", "304.0", "76.0", "47.5", "0"],
-  ["miércoles, 15", "4", "122", "-118", "123", "22", "5.59", "0", "5", "0", "0", "154", "15.4", "77.0", "451.0", "154.0", "55.0", "30.8", "440.0", "352.0", "88.0", "55.0", "0"],
-  ["jueves, 16", "5", "124", "-119", "123", "22", "5.59", "13", "4", "0", "0", "154", "15.4", "77.0", "451.0", "154.0", "55.0", "30.8", "440.0", "352.0", "88.0", "55.0", "0"],
-  ["viernes, 17", "4", "148", "-144", "144", "26", "5.54", "6", "0", "0", "0", "182", "18.2", "91.0", "533.0", "182.0", "65.0", "36.4", "520.0", "416.0", "104.0", "65.0", "0"],
-  ["sábado, 18", "0", "158", "-158", "158", "29", "5.45", "12", "0", "0", "0", "203", "20.3", "101.5", "594.5", "203.0", "72.5", "40.6", "580.0", "464.0", "116.0", "72.5", "0"],
-  ["domingo, 19", "0", "169", "-169", "169", "30", "5.63", "0", "0", "0", "0", "210", "21.0", "105.0", "615.0", "210.0", "75.0", "42.0", "600.0", "480.0", "120.0", "75.0", "0"],
-  ["lunes, 20", "0", "108", "-108", "108", "20", "5.40", "0", "0", "0", "0", "140", "14.0", "70.0", "410.0", "140.0", "50.0", "28.0", "400.0", "320.0", "80.0", "50.0", "0"],
-  ["martes, 21", "0", "96", "-96", "101", "18", "5.61", "8", "5", "0", "0", "126", "12.6", "63.0", "369.0", "126.0", "45.0", "25.2", "360.0", "288.0", "72.0", "45.0", "0"],
-  ["miércoles, 22", "5", "125", "-120", "125", "22", "5.68", "3", "5", "1", "0", "154", "15.4", "77.0", "451.0", "154.0", "55.0", "30.8", "440.0", "352.0", "88.0", "55.0", "0"],
-  ["jueves, 23", "6", "100", "-94", "95", "17", "5.59", "8", "1", "0", "0", "119", "11.9", "59.5", "348.5", "119.0", "42.5", "23.8", "340.0", "272.0", "68.0", "42.5", "0"],
-  ["viernes, 24", "1", "138", "-137", "137", "25", "5.48", "0", "0", "0", "0", "175", "17.5", "87.5", "512.5", "175.0", "62.5", "35.0", "500.0", "400.0", "100.0", "62.5", "0"],
-  ["sábado, 25", "0", "181", "-181", "185", "33", "5.61", "12", "4", "0", "0", "231", "23.1", "115.5", "676.5", "231.0", "82.5", "46.2", "660.0", "528.0", "132.0", "82.5", "0"],
-  ["domingo, 26", "4", "174", "-170", "171", "31", "5.52", "0", "1", "0", "0", "217", "21.7", "108.5", "635.5", "217.0", "77.5", "43.4", "620.0", "496.0", "124.0", "77.5", "0"],
-  ["lunes, 27", "1", "120", "-119", "121", "21", "5.76", "5", "2", "0", "0", "147", "14.7", "73.5", "430.5", "147.0", "52.5", "29.4", "420.0", "336.0", "84.0", "52.5", "0"],
-  ["martes, 28", "2", "117", "-115", "119", "21", "5.67", "8", "4", "0", "0", "147", "14.7", "73.5", "430.5", "147.0", "52.5", "29.4", "420.0", "336.0", "84.0", "52.5", "0"],
-  ["miércoles, 29", "4", "139", "-135", "138", "24", "5.75", "0", "3", "0", "0", "168", "16.8", "84.0", "492.0", "168.0", "60.0", "33.6", "480.0", "384.0", "96.0", "60.0", "0"],
-  ["jueves, 30", "3", "184", "-181", "188", "34", "5.53", "10", "7", "0", "0", "238", "23.8", "119.0", "697.0", "238.0", "85.0", "47.6", "680.0", "544.0", "136.0", "85.0", "0"],
-];
 
 const state = {
   productId: "03",
   monthId: "ABR",
   sections: { pedidos: true, produccion: true, materias: true },
   report: null,
-  requestText: "",
   toast: "",
   error: "",
   loading: false,
@@ -183,7 +147,6 @@ function parseProductionSheet(rows, product, month) {
     pedidos: dailyRows.map(({ dia, fecha, pedidos, stock_ini, stock_final }) => ({ dia, fecha, pedidos, stock_ini, stock_final })),
     produccion: dailyRows.map(({ dia, fecha, produccion, ollas, rendimiento }) => ({ dia, fecha, produccion, ollas, rendimiento })),
     materias: materiaTotals,
-    rawRows: rows,
   };
 }
 
@@ -245,24 +208,6 @@ function fetchPublishedSheetRows(product, month) {
   });
 }
 
-function buildRequest() {
-  const product = PRODUCTS.find((item) => item.id === state.productId);
-  const month = MONTHS.find((item) => item.id === state.monthId);
-  const chosen = Object.entries(state.sections)
-    .filter(([, enabled]) => enabled)
-    .map(([key]) => SECTIONS[key].label);
-
-  return [
-    "PL COCINA - REPORTE DE PRODUCCIÓN",
-    `Producto: ${product.name}`,
-    `Archivo: ${product.file}`,
-    `Spreadsheet ID: ${product.sheetId}`,
-    `Mes/pestaña: ${month.id} (${month.name})`,
-    `Secciones: ${chosen.join(", ")}`,
-    "",
-    "Detalle usado por el dashboard público para leer la pestaña indicada desde Google Sheets publicado.",
-  ].join("\n");
-}
 
 function html(strings, ...values) {
   return strings.reduce((result, string, index) => result + string + (values[index] ?? ""), "");
@@ -386,10 +331,6 @@ function reportView(report) {
           <h2 class="report-title">${report.product.name} · ${report.month.name}</h2>
           <p class="report-meta">${report.product.file} · Generado ${report.generatedAt}</p>
         </div>
-        <div class="report-actions">
-          <button class="button secondary" data-action="copy-request">Copiar detalle</button>
-          <button class="button ghost" data-action="reset">Nuevo reporte</button>
-        </div>
       </header>
       <div class="content">
         <p class="summary">${report.summary}</p>
@@ -462,10 +403,6 @@ function emptyView() {
         <h2>${state.loading ? "Leyendo reporte..." : "Elige el reporte que necesitas"}</h2>
         <p>Seleccionado: <strong>${product.name}</strong> · <strong>${month.name}</strong>. Marca pedidos, producción y/o materias primas, y presiona Generar reporte.</p>
         ${state.error ? `<p class="error-note">${state.error}</p>` : ""}
-        ${state.requestText ? `
-          <div class="request-box">
-            <pre>${state.requestText}</pre>
-          </div>` : ""}
       </div>
     </article>`;
 }
@@ -502,16 +439,9 @@ function sidebarView() {
       </div>
       <div class="actions">
         <button class="button" data-action="generate" ${state.loading ? "disabled" : ""}>${state.loading ? "Leyendo..." : "Generar reporte"}</button>
-        <button class="button secondary" data-action="sample">Cargar ejemplo real</button>
-        <button class="button ghost" data-action="copy-request">Copiar detalle</button>
         <button class="button ghost" data-action="open-drive">Abrir archivo en Drive</button>
       </div>
       <p class="helper">Archivo activo: <strong>${product.file}</strong>. La app lee la pestaña elegida desde Google Sheets publicado; no necesita servidor ni backend.</p>
-      <div class="field" style="margin-top:14px">
-        <label for="rawRows">Pegar filas exportadas</label>
-        <textarea id="rawRows" class="textarea" placeholder='Pega JSON con "values" o un arreglo de filas'></textarea>
-      </div>
-      <button class="button secondary" data-action="parse-pasted">Procesar filas pegadas</button>
     </aside>`;
 }
 
@@ -543,15 +473,10 @@ function setToast(message) {
   }, 2600);
 }
 
-async function copy(text) {
-  await navigator.clipboard.writeText(text);
-  setToast("Solicitud copiada.");
-}
 
 async function generateReport() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
   const month = MONTHS.find((item) => item.id === state.monthId);
-  state.requestText = buildRequest();
   state.loading = true;
   state.error = "";
   state.report = null;
@@ -569,26 +494,6 @@ async function generateReport() {
   render();
 }
 
-function parsePastedRows() {
-  const text = document.querySelector("#rawRows")?.value.trim();
-  if (!text) {
-    setToast("Pega primero las filas exportadas.");
-    return;
-  }
-  try {
-    const parsed = JSON.parse(text);
-    const rows = parsed.values || parsed.rows || parsed;
-    if (!Array.isArray(rows)) throw new Error("Formato no reconocido.");
-    const product = PRODUCTS.find((item) => item.id === state.productId);
-    const month = MONTHS.find((item) => item.id === state.monthId);
-    state.report = parseProductionSheet(rows, product, month);
-    state.requestText = buildRequest();
-    render();
-    setToast("Filas procesadas.");
-  } catch {
-    setToast("No pude leer ese JSON.");
-  }
-}
 
 function bindEvents() {
   document.querySelector("#product")?.addEventListener("change", (event) => {
@@ -611,24 +516,10 @@ function bindEvents() {
     button.addEventListener("click", async (event) => {
       const action = event.currentTarget.dataset.action;
       if (action === "generate") await generateReport();
-      if (action === "sample") {
-        state.productId = "03";
-        state.monthId = "ABR";
-        state.sections = { pedidos: true, produccion: true, materias: true };
-        state.report = parseProductionSheet(SAMPLE_ROWS, PRODUCTS[2], MONTHS[3]);
-        state.requestText = buildRequest();
-        render();
-      }
-      if (action === "copy-request") await copy(buildRequest());
       if (action === "open-drive") {
         const product = PRODUCTS.find((item) => item.id === state.productId);
         window.open(`https://docs.google.com/spreadsheets/d/${product.sheetId}/edit`, "_blank", "noopener");
       }
-      if (action === "reset") {
-        state.report = null;
-        render();
-      }
-      if (action === "parse-pasted") parsePastedRows();
     });
   });
 }
