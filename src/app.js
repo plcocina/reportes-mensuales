@@ -37,9 +37,9 @@ const SECTIONS = {
 
 
 const state = {
-  productId: "03",
-  monthId: "ABR",
-  sections: { pedidos: true, produccion: true, materias: true },
+  productId: "",
+  monthId: "",
+  sections: { pedidos: false, produccion: false, materias: false },
   report: null,
   toast: "",
   error: "",
@@ -397,11 +397,13 @@ function reportView(report) {
 function emptyView() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
   const month = MONTHS.find((item) => item.id === state.monthId);
+  const productLabel = product?.name || "elige un producto";
+  const monthLabel = month?.name || "elige un mes";
   return `
     <article class="report-card empty">
       <div class="empty-inner">
         <h2>${state.loading ? "Leyendo reporte..." : "Elige el reporte que necesitas"}</h2>
-        <p>Seleccionado: <strong>${product.name}</strong> · <strong>${month.name}</strong>. Marca pedidos, producción y/o materias primas, y presiona Generar reporte.</p>
+        <p>Seleccionado: <strong>${productLabel}</strong> · <strong>${monthLabel}</strong>. Marca pedidos, producción y/o materias primas, y presiona Generar reporte.</p>
         ${state.error ? `<p class="error-note">${state.error}</p>` : ""}
       </div>
     </article>`;
@@ -409,17 +411,21 @@ function emptyView() {
 
 function sidebarView() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
+  const selectedSections = Object.values(state.sections).some(Boolean);
+  const canGenerate = Boolean(product && state.monthId && selectedSections);
   return `
     <aside class="sidebar">
       <div class="field">
         <label for="product">Producto</label>
         <select id="product" class="select">
+          <option value="">Elige una opción de producto</option>
           ${renderSelectOptions(PRODUCTS, state.productId, (item) => `${item.id} · ${item.name}`)}
         </select>
       </div>
       <div class="field">
         <label for="month">Mes</label>
         <select id="month" class="select">
+          <option value="">Elige una opción de mes</option>
           ${renderSelectOptions(MONTHS, state.monthId, (item) => `${item.id} · ${item.name}`)}
         </select>
       </div>
@@ -438,10 +444,10 @@ function sidebarView() {
         </div>
       </div>
       <div class="actions">
-        <button class="button" data-action="generate" ${state.loading ? "disabled" : ""}>${state.loading ? "Leyendo..." : "Generar reporte"}</button>
-        <button class="button ghost" data-action="open-drive">Abrir archivo en Drive</button>
+        <button class="button" data-action="generate" ${state.loading || !canGenerate ? "disabled" : ""}>${state.loading ? "Leyendo..." : "Generar reporte"}</button>
+        <button class="button ghost" data-action="open-drive" ${product ? "" : "disabled"}>Abrir archivo en Drive</button>
       </div>
-      <p class="helper">Archivo activo: <strong>${product.file}</strong>. La app lee la pestaña elegida desde Google Sheets publicado; no necesita servidor ni backend.</p>
+      <p class="helper">${product ? `Archivo activo: <strong>${product.file}</strong>. ` : "Selecciona un producto para ver el archivo activo. "}La app lee la pestaña elegida desde Google Sheets publicado; no necesita servidor ni backend.</p>
     </aside>`;
 }
 
@@ -477,6 +483,12 @@ function setToast(message) {
 async function generateReport() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
   const month = MONTHS.find((item) => item.id === state.monthId);
+  const selectedSections = Object.values(state.sections).some(Boolean);
+  if (!product || !month || !selectedSections) {
+    state.error = "Selecciona producto, mes y al menos una sección antes de generar el reporte.";
+    render();
+    return;
+  }
   state.loading = true;
   state.error = "";
   state.report = null;
@@ -499,16 +511,19 @@ function bindEvents() {
   document.querySelector("#product")?.addEventListener("change", (event) => {
     state.productId = event.target.value;
     state.report = null;
+    state.error = "";
     render();
   });
   document.querySelector("#month")?.addEventListener("change", (event) => {
     state.monthId = event.target.value;
     state.report = null;
+    state.error = "";
     render();
   });
   document.querySelectorAll("[data-section]").forEach((input) => {
     input.addEventListener("change", (event) => {
       state.sections[event.target.dataset.section] = event.target.checked;
+      state.error = "";
       render();
     });
   });
@@ -518,6 +533,7 @@ function bindEvents() {
       if (action === "generate") await generateReport();
       if (action === "open-drive") {
         const product = PRODUCTS.find((item) => item.id === state.productId);
+        if (!product) return;
         window.open(`https://docs.google.com/spreadsheets/d/${product.sheetId}/edit`, "_blank", "noopener");
       }
     });
