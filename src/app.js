@@ -245,8 +245,19 @@ function parseProductionSheet(rows, product, month) {
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
   const stockFinalCol = findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
+  const molcaMateriaLabels = [
+    "Tomate (KG)",
+    "Agua (LT)",
+    "J. Tatemado (KG)",
+    "Cebolla (KG)",
+    "Cilantro (KG)",
+    "Ajo (KG)",
+    "SUR *Cubetas con limón",
+    "Limón* (LT)",
+    "Sal (KG)",
+  ];
   let materiaColumns = product.id === "01"
-    ? headers.slice(12, 21).map((label, offset) => ({ label: label || `Col ${13 + offset}`, index: 12 + offset }))
+    ? molcaMateriaLabels.map((label, offset) => ({ label, index: 12 + offset }))
     : findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
     const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
