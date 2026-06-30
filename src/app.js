@@ -243,7 +243,7 @@ function parseProductionSheet(rows, product, month) {
   const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
-  const rendimientoCol = findColumn(headers, (h) => h.includes("rendimiento"), 6);
+  const rendimientoCol = findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
   const stockFinalCol = findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
   let materiaColumns = findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
