@@ -132,15 +132,11 @@ function parseProductionSheet(rows, product, month) {
   let fallbackDay = 1;
   const dailyRows = [];
 
-  for (const row of rows.slice(3)) {
-    const first = cleanText(row[0]);
-    if (/total|promedio|dif\.|moda|stdev/.test(first)) break;
-
+  for (const row of rows.slice(3, 34)) {
     const hasData = [stockIniCol, pedidosCol, produccionCol, ollasCol, rendimientoCol, stockFinalCol]
       .some((index) => row[index] !== undefined && row[index] !== "");
-    if (!hasData) continue;
-
     const day = splitDay(row[0], fallbackDay);
+    if (!hasData && !day) continue;
     if (!day) continue;
     fallbackDay = Number(day.fecha) + 1;
 
@@ -255,6 +251,7 @@ function fetchPublishedSheetRows(product, month) {
     const params = new URLSearchParams({
       sheet: month.id,
       headers: "0",
+      range: "A1:ZZ34",
       tqx: `responseHandler:${callbackName}`,
     });
     script.src = `https://docs.google.com/spreadsheets/d/${product.sheetId}/gviz/tq?${params.toString()}`;
@@ -320,8 +317,8 @@ function barChart(rows, key, color, average, section) {
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
       <line x1="${pad.left}" x2="${pad.left}" y1="${pad.top}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${avgY}" y2="${avgY}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
-      <rect x="${width - pad.right - 112}" y="${avgY - 24}" width="108" height="22" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
-      <text x="${width - pad.right - 58}" y="${avgY - 9}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Media ${format(average, 1)}</text>
+      <rect x="${width - pad.right - 128}" y="${pad.top - 16}" width="124" height="24" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
+      <text x="${width - pad.right - 66}" y="${pad.top + 1}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Media ${format(average, 1)}</text>
       ${bars}
     </svg>`;
 }
