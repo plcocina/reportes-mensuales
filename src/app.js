@@ -167,7 +167,10 @@ function chooseGroupRow(rows) {
 
 function findColumnInTopRows(rows, names, fallback) {
   const normalized = names.map((name) => cleanText(name).replace(/\.$/, ""));
-  for (const row of rows.slice(0, 6)) {
+  const candidates = [];
+  if (Array.isArray(rows.__columns)) candidates.push(rows.__columns);
+  rows.slice(0, 6).forEach((row) => candidates.push(row || []));
+  for (const row of candidates) {
     const index = (row || []).findIndex((cell) => {
       const h = cleanText(cell).replace(/\s*\([^)]*\)/g, "").replace(/\.$/, "").trim();
       return normalized.includes(h);
@@ -175,6 +178,32 @@ function findColumnInTopRows(rows, names, fallback) {
     if (index >= 0) return index;
   }
   return fallback;
+}
+
+function headerCellText(cell) {
+  return cleanText(cell).replace(/\s*\([^)]*\)/g, " ").replace(/[().-]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function topHeaderCandidates(rows) {
+  const candidates = [];
+  if (Array.isArray(rows.__columns)) candidates.push(rows.__columns);
+  rows.slice(0, 6).forEach((row) => candidates.push(row || []));
+  return candidates;
+}
+
+function findHeaderByWords(rows, requiredWords, excludedWords = [], fallback = -1, prefer = "first") {
+  const matches = [];
+  topHeaderCandidates(rows).forEach((row) => {
+    (row || []).forEach((cell, index) => {
+      const text = headerCellText(cell);
+      if (!text) return;
+      const hasRequired = requiredWords.every((word) => text.includes(cleanText(word)));
+      const hasExcluded = excludedWords.some((word) => text.includes(cleanText(word)));
+      if (hasRequired && !hasExcluded) matches.push(index);
+    });
+  });
+  if (!matches.length) return fallback;
+  return prefer === "last" ? Math.max(...matches) : Math.min(...matches);
 }
 
 function findGroupStart(rows, groupName) {
@@ -210,12 +239,12 @@ function mode(values) {
 function parseProductionSheet(rows, product, month) {
   const headers = chooseHeaderRow(rows);
   const sectionRow = chooseGroupRow(rows);
-  const stockIniCol = findColumnInTopRows(rows, ["Stock Ini.", "Stock Ini"], findExactColumn(headers, ["Stock Ini.", "Stock Ini"], 1));
+  const stockIniCol = findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = findColumn(headers, (h) => h.includes("rendimiento"), 6);
-  const stockFinalCol = findColumnInTopRows(rows, ["Stock Final", "Stock Final."], findExactColumn(headers, ["Stock Final", "Stock Final."], 8));
+  const stockFinalCol = findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
   let materiaColumns = findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
     const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
@@ -559,12 +588,29 @@ function reportView(report) {
               ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
               ${selectedDayDetail(report, "pedidos")}
             </section>
+            <section class="panel">
+              <h3 class="panel-title">Tabla de pedidos</h3>
+              ${renderTable(report.pedidos, [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
+                { key: "stock_ini", label: `Stock inicial (${report.units.stock})`, format: (v) => format(v) },
+                { key: "stock_final", label: `Stock final (${report.units.stock})`, format: (v) => format(v) },
+              ], "pedidos")}
             </section>` : ""}
           ${visible.produccion ? `
             <section class="panel">
               <h3 class="panel-title">Producción por día</h3>
               ${barChart(report.produccion, "produccion", SECTIONS.produccion.color, report.kpis.promedioProduccion, "produccion")}
               ${selectedDayDetail(report, "produccion")}
+            </section>
+            <section class="panel">
+              <h3 class="panel-title">Tabla de producción</h3>
+              ${renderTable(report.produccion, [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
+                { key: "ollas", label: "Ollas", format: (v) => format(v) },
+                { key: "rendimiento", label: `Rendimiento (${report.units.rendimiento})`, format: (v) => format(v, 2) },
+              ], "produccion")}
             </section>
             <section class="panel">
               <h3 class="panel-title">Rendimiento diario</h3>
