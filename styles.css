@@ -592,6 +592,18 @@ tr:last-child td {
     grid-template-columns: 1fr;
   }
 
+  .trend-head {
+    display: grid;
+  }
+
+  .trend-head strong {
+    justify-content: center;
+  }
+
+  .trend-detail {
+    grid-template-columns: 1fr;
+  }
+
   .report-cta {
     display: grid;
   }
@@ -605,6 +617,70 @@ tr:last-child td {
 .chart-point {
   cursor: pointer;
   outline: none;
+}
+
+.trend-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+}
+
+.trend-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.trend-head .panel-title {
+  margin-bottom: 4px;
+}
+
+.trend-head p {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.trend-head strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid #cfd6e2;
+  border-radius: 7px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #108a63;
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.monthly-chart {
+  min-height: 280px;
+}
+
+.chart-month {
+  cursor: pointer;
+  outline: none;
+}
+
+.chart-month circle {
+  transition: r 0.16s ease, filter 0.16s ease, stroke-width 0.16s ease;
+}
+
+.chart-month:hover circle,
+.chart-month:focus circle,
+.chart-month.is-selected circle {
+  filter: drop-shadow(0 6px 9px rgba(16, 138, 99, 0.28));
+  stroke-width: 3;
+}
+
+.chart-month-line {
+  filter: drop-shadow(0 8px 14px rgba(16, 138, 99, 0.14));
+}
+
+.trend-detail {
+  grid-template-columns: 1fr 1fr 1.4fr;
 }
 
 .chart-point circle {

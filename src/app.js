@@ -66,6 +66,7 @@ const state = {
   error: "",
   loading: false,
   selectedDay: null,
+  selectedTrendMonth: null,
   sidebarCollapsed: false,
 };
 
@@ -515,6 +516,92 @@ function lineChart(rows) {
     </svg>`;
 }
 
+function monthlyTrendChart(rows) {
+  if (!rows?.length) return "";
+  const width = 1100;
+  const height = 300;
+  const pad = { top: 34, right: 34, bottom: 44, left: 58 };
+  const values = rows.map((row) => number(row.pedidos));
+  const maxValue = Math.max(...values) * 1.16 || 1;
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+  const xFor = (index) => rows.length === 1 ? pad.left + chartW / 2 : pad.left + (index / (rows.length - 1)) * chartW;
+  const yFor = (value) => pad.top + chartH - (value / maxValue) * chartH;
+  const points = rows.map((row, index) => ({ ...row, x: xFor(index), y: yFor(row.pedidos) }));
+  const path = points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  const areaPath = `${path} L ${points[points.length - 1].x} ${pad.top + chartH} L ${points[0].x} ${pad.top + chartH} Z`;
+  const selectedMonth = state.selectedTrendMonth || rows[rows.length - 1]?.id;
+
+  const dots = points.map((point) => {
+    const selected = selectedMonth === point.id;
+    return `
+      <g class="chart-month${selected ? " is-selected" : ""}" data-chart-month="true" data-month="${point.id}" tabindex="0" role="button" aria-label="${point.name}: ${format(point.pedidos)} pedidos">
+        <circle cx="${point.x}" cy="${point.y}" r="${selected ? 7 : 5}" fill="#108a63" stroke="#ffffff" stroke-width="2"></circle>
+        <title>${point.name}: ${format(point.pedidos)} pedidos</title>
+        <text x="${point.x}" y="${height - 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#526071">${point.label}</text>
+      </g>`;
+  }).join("");
+
+  return `
+    <svg class="chart monthly-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Pedidos mes a mes">
+      <defs>
+        <linearGradient id="monthlyTrendFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#108a63" stop-opacity="0.22"></stop>
+          <stop offset="100%" stop-color="#108a63" stop-opacity="0.02"></stop>
+        </linearGradient>
+      </defs>
+      <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
+      <line x1="${pad.left}" x2="${pad.left}" y1="${pad.top}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
+      <path d="${areaPath}" fill="url(#monthlyTrendFill)"></path>
+      <path class="chart-month-line" d="${path}" fill="none" stroke="#108a63" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+      ${dots}
+    </svg>`;
+}
+
+function selectedTrendDetail(rows) {
+  if (!rows?.length) return "";
+  const selected = rows.find((row) => row.id === state.selectedTrendMonth) || rows[rows.length - 1];
+  const index = rows.findIndex((row) => row.id === selected.id);
+  const previous = index > 0 ? rows[index - 1] : null;
+  const diff = previous ? selected.pedidos - previous.pedidos : 0;
+  const diffPct = previous?.pedidos ? (diff / previous.pedidos) * 100 : 0;
+  const trendLabel = !previous ? "Mes inicial" : `${diff >= 0 ? "+" : ""}${format(diff)} pedidos (${diffPct >= 0 ? "+" : ""}${format(diffPct, 1)}%)`;
+
+  return `
+    <div class="day-detail trend-detail">
+      <div class="day-detail-card">
+        <span>Mes</span>
+        <strong>${selected.name}</strong>
+      </div>
+      <div class="day-detail-card">
+        <span>Pedidos</span>
+        <strong>${format(selected.pedidos)}</strong>
+      </div>
+      <div class="day-detail-card">
+        <span>Vs. mes anterior</span>
+        <strong>${trendLabel}</strong>
+      </div>
+    </div>`;
+}
+
+function monthlyTrendPanel(report) {
+  if (!report.monthlyPedidos?.length) return "";
+  const first = report.monthlyPedidos[0];
+  const last = report.monthlyPedidos[report.monthlyPedidos.length - 1];
+  return `
+    <section class="panel trend-panel">
+      <div class="trend-head">
+        <div>
+          <h3 class="panel-title">Fiebre mensual de pedidos</h3>
+          <p>${first.name} a ${last.name} · ${report.product.name}</p>
+        </div>
+        <strong>${format(last.pedidos)} pedidos</strong>
+      </div>
+      ${monthlyTrendChart(report.monthlyPedidos)}
+      ${selectedTrendDetail(report.monthlyPedidos)}
+    </section>`;
+}
+
 function renderTable(rows, columns, section) {
   if (!rows?.length) return "";
   const selectedFecha = state.selectedDay?.section === section ? state.selectedDay.fecha : null;
@@ -640,6 +727,7 @@ function reportView(report) {
               ], "materias")}
             </section>` : ""}
         </div>
+        ${monthlyTrendPanel(report)}
         <section class="report-cta">
           <div>
             <h3>Reporte listo para compartir</h3>
@@ -739,6 +827,32 @@ function setToast(message) {
 
 
 
+async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) {
+  const selectedIndex = MONTHS.findIndex((month) => month.id === selectedMonth.id);
+  const trendMonths = MONTHS.slice(0, selectedIndex + 1);
+  const results = await Promise.all(trendMonths.map(async (month) => {
+    try {
+      const monthReport = month.id === selectedMonth.id
+        ? selectedReport
+        : parseProductionSheet(await fetchPublishedSheetRows(product, month), product, month);
+      return {
+        id: month.id,
+        name: month.name,
+        label: month.id,
+        pedidos: monthReport.kpis.totalPedidos,
+      };
+    } catch {
+      return {
+        id: month.id,
+        name: month.name,
+        label: month.id,
+        pedidos: 0,
+      };
+    }
+  }));
+  return results;
+}
+
 function downloadReportPdf() {
   if (!state.report) return;
   const previousTitle = document.title;
@@ -765,8 +879,11 @@ async function generateReport() {
 
   try {
     const rows = await fetchPublishedSheetRows(product, month);
-    state.report = parseProductionSheet(rows, product, month);
+    const report = parseProductionSheet(rows, product, month);
+    report.monthlyPedidos = await fetchMonthlyPedidosTrend(product, month, report);
+    state.report = report;
     state.selectedDay = null;
+    state.selectedTrendMonth = month.id;
     setToast("Reporte leído desde Google Sheets.");
   } catch {
     state.error =
@@ -782,6 +899,7 @@ function bindEvents() {
     state.productId = event.target.value;
     state.report = null;
     state.selectedDay = null;
+    state.selectedTrendMonth = null;
     state.error = "";
     render();
   });
@@ -789,6 +907,7 @@ function bindEvents() {
     state.monthId = event.target.value;
     state.report = null;
     state.selectedDay = null;
+    state.selectedTrendMonth = null;
     state.error = "";
     render();
   });
@@ -819,9 +938,14 @@ function bindEvents() {
       }
     });
   });
-  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-table-row]").forEach((item) => {
+  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-table-row], [data-chart-month]").forEach((item) => {
     item.addEventListener("click", (event) => {
       const target = event.currentTarget;
+      if (target.dataset.month) {
+        state.selectedTrendMonth = target.dataset.month;
+        render();
+        return;
+      }
       if (!target.dataset.fecha || !target.dataset.section || target.dataset.section === "materias") return;
       state.selectedDay = {
         section: target.dataset.section,
