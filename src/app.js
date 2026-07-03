@@ -52,6 +52,14 @@ const PRODUCT_UNITS = {
   "13": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
 };
 
+const PRODUCT_COLUMN_OVERRIDES = {
+  "02": {
+    stockIniCol: 1,
+    stockFinalCol: 8,
+    materiaColumns: [11, 12, 13],
+  },
+};
+
 function unitsFor(product) {
   return PRODUCT_UNITS[product?.id] || { pedido: "unidades", produccion: "unidades", stock: "unidades", rendimiento: "prod." };
 }
@@ -241,12 +249,13 @@ function mode(values) {
 function parseProductionSheet(rows, product, month) {
   const headers = chooseHeaderRow(rows);
   const sectionRow = chooseGroupRow(rows);
-  const stockIniCol = findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
+  const columnOverride = PRODUCT_COLUMN_OVERRIDES[product.id] || {};
+  const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
-  const stockFinalCol = findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
+  const stockFinalCol = columnOverride.stockFinalCol ?? findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
   const molcaMateriaLabels = [
     "Tomate (KG)",
     "Agua (LT)",
@@ -260,7 +269,7 @@ function parseProductionSheet(rows, product, month) {
   ];
   let materiaColumns = product.id === "01"
     ? molcaMateriaLabels.map((label, offset) => ({ label, index: 12 + offset }))
-    : findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
+    : columnOverride.materiaColumns?.map((index) => ({ label: headers[index], index })) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
     const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
     const nextGroup = materiaStart >= 0
