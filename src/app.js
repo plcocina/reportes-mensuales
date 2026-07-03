@@ -56,6 +56,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
   "02": {
     stockIniCol: 1,
     stockFinalCol: 8,
+    rendimientoCol: 6,
     materiaColumns: [11, 12, 13],
   },
 };
@@ -254,7 +255,7 @@ function parseProductionSheet(rows, product, month) {
   const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
-  const rendimientoCol = findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
+  const rendimientoCol = columnOverride.rendimientoCol ?? findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
   const stockFinalCol = columnOverride.stockFinalCol ?? findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
   const molcaMateriaLabels = [
     "Tomate (KG)",
