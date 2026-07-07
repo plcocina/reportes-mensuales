@@ -112,18 +112,23 @@ const PRODUCT_COLUMN_OVERRIDES = {
   },
   "05": {
     stockIniCol: 1,
-    pedidosSumCols: [3, 6],
+    pedidosCol: 3,
     stockFinalCol: 11,
     produccionCol: 8,
     ollasCol: 9,
     rendimientoCol: 10,
     extraPedidoColumns: [
-      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas", index: 2, color: "#d97706" },
-      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes", index: 5, color: "#7c3aed" },
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas de 1.2 KG", index: 2, color: "#d97706" },
     ],
     extraProduccionColumns: [
-      { key: "produccion_chicas_1kg", label: "Producción en Bolsas Chicas", index: 7 },
-      { key: "produccion_grandes_2kg", label: "Producción en Bolsas Grandes", index: 12 },
+      { key: "produccion_chicas_1kg", label: "Producción en Bolsas de 1.2 KG", index: 7 },
+    ],
+    materiaColumns: [
+      { label: "Tomate (KG)", index: 13 },
+      { label: "Cebolla (KG)", index: 14 },
+      { label: "Serrano (KG)", index: 15 },
+      { label: "Tocino Crudo (KG)", index: 16 },
+      { label: "Aceite (LT)", index: 17 },
     ],
   },
 };
@@ -739,10 +744,15 @@ function monthlyTrendPanel(report) {
   ];
 
   if (report.kpis.extraPedidoTotals?.length) {
-    configs.push(
-      { key: "pedidosChicas", title: "Fiebre mensual de pedidos en Bolsas Chicas", unit: "bolsas", color: "#d97706" },
-      { key: "pedidosGrandes", title: "Fiebre mensual de pedidos en Bolsas Grandes", unit: "bolsas", color: "#7c3aed" },
-    );
+    configs.push({
+      key: "pedidosChicas",
+      title: report.product.id === "05" ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG" : "Fiebre mensual de pedidos en Bolsas Chicas",
+      unit: "bolsas",
+      color: "#d97706",
+    });
+    if (report.kpis.extraPedidoTotals.some((item) => item.key === "pedidos_grandes_2kg")) {
+      configs.push({ key: "pedidosGrandes", title: "Fiebre mensual de pedidos en Bolsas Grandes", unit: "bolsas", color: "#7c3aed" });
+    }
   }
 
   return configs.map((config) => monthlyTrendSection(report, config)).join("");
@@ -833,27 +843,30 @@ function renderKpiCard(label, value, note) {
 }
 
 function renderKpis(report) {
-  if (report.product.id === "04") {
+  if (report.kpis.extraPedidoTotals?.length) {
     const pedidoChicas = report.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_chicas_1kg")?.total || 0;
     const pedidoGrandes = report.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_grandes_2kg")?.total || 0;
     const produccionChicas = report.kpis.extraProduccionTotals?.find((item) => item.key === "produccion_chicas_1kg")?.total || 0;
     const produccionGrandes = report.kpis.extraProduccionTotals?.find((item) => item.key === "produccion_grandes_2kg")?.total || 0;
-
-    const chicaNote = report.product.id === "04" ? "bolsas de 1 kg" : "bolsas chicas";
-    const grandeNote = report.product.id === "04" ? "bolsas de 2 kg" : "bolsas grandes";
+    const isArroz = report.product.id === "04";
+    const isMezcla = report.product.id === "05";
+    const chicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : "bolsas chicas";
+    const grandeNote = isArroz ? "bolsas de 2 kg" : "bolsas grandes";
+    const pedidoCards =
+      renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
+      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(pedidoChicas), chicaNote) +
+      (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(pedidoGrandes), grandeNote));
+    const produccionCards =
+      renderKpiCard("Producción KG", format(report.kpis.totalProduccion), "kg del mes") +
+      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(produccionChicas), chicaNote) +
+      (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(produccionGrandes), grandeNote)) +
+      renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
+      renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación");
+    const pedidoClass = isMezcla ? "kpis kpis-two" : "kpis kpis-three";
+    const produccionClass = isMezcla ? "kpis kpis-four" : "kpis kpis-five";
     return '<section class="kpi-section">' +
-      '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="kpis kpis-three">' +
-        renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
-        renderKpiCard("Bolsas chicas", format(pedidoChicas), chicaNote) +
-        renderKpiCard("Bolsas grandes", format(pedidoGrandes), grandeNote) +
-      '</div></div>' +
-      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-five">' +
-        renderKpiCard("Producción KG", format(report.kpis.totalProduccion), "kg del mes") +
-        renderKpiCard("Bolsas chicas", format(produccionChicas), chicaNote) +
-        renderKpiCard("Bolsas grandes", format(produccionGrandes), grandeNote) +
-        renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
-        renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación") +
-      '</div></div>' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="' + pedidoClass + '">' + pedidoCards + '</div></div>' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="' + produccionClass + '">' + produccionCards + '</div></div>' +
     '</section>';
   }
 
@@ -864,7 +877,6 @@ function renderKpis(report) {
     renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación") +
   '</section>';
 }
-
 function reportView(report) {
   const visible = state.sections;
   return html`
@@ -897,8 +909,8 @@ function reportView(report) {
               ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: "Pedidos en KG", format: (v) => format(v) },
-                { key: "pedidos_chicas_1kg", label: report.product.id === "04" ? "Pedidos en Bolsas Chicas (1 KG)" : "Pedidos en Bolsas Chicas", format: (v) => format(v) },
-                { key: "pedidos_grandes_2kg", label: report.product.id === "04" ? "Pedidos en Bolsas Grandes (2 KG)" : "Pedidos en Bolsas Grandes", format: (v) => format(v) },
+                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
+                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
