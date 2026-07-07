@@ -95,7 +95,20 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { key: "produccion_chicas_1kg", label: "Producción en Bolsas Chicas (1 KG)", index: 13 },
       { key: "produccion_grandes_2kg", label: "Producción en Bolsas Grandes (2 KG)", index: 14 },
     ],
-    materiaRange: { headerRow: 2, startCol: 24, endCol: 35 },
+    materiaColumns: [
+      { label: "Arroz Blanco (KG)", index: 24 },
+      { label: "Arroz Amarillo (KG)", index: 25 },
+      { label: "Zanahoria (KG)", index: 26 },
+      { label: "Calabacita (KG)", index: 27 },
+      { label: "Morrón (KG)", index: 28 },
+      { label: "Cebolla (KG)", index: 29 },
+      { label: "Ajo (KG)", index: 30 },
+      { label: "Agua (LT)", index: 31 },
+      { label: "Aceite (LT)", index: 32 },
+      { label: "Condimento (Bolsas)", index: 33 },
+      { label: 'Condimento "Chicken" (KG)', index: 34 },
+      { label: "Limón (LT)", index: 35 },
+    ],
   },
 };
 
