@@ -136,7 +136,7 @@ function unitsFor(product) {
 const state = {
   productId: "",
   monthId: "",
-  sections: { pedidos: false, produccion: false, materias: false },
+  sections: { pedidos: true, produccion: true, materias: true },
   report: null,
   toast: "",
   error: "",
@@ -956,7 +956,7 @@ function emptyView() {
     <article class="report-card empty">
       <div class="empty-inner">
         <h2>${state.loading ? "Leyendo reporte..." : "Elige el reporte que necesitas"}</h2>
-        <p>Seleccionado: <strong>${productLabel}</strong> · <strong>${monthLabel}</strong>. Marca pedidos, producción y/o materias primas, y presiona Generar reporte.</p>
+        <p>Seleccionado: <strong>${productLabel}</strong> · <strong>${monthLabel}</strong>. Presiona Generar reporte para leer pedidos, producción y materias primas.</p>
         ${state.error ? `<p class="error-note">${state.error}</p>` : ""}
       </div>
     </article>`;
@@ -964,8 +964,7 @@ function emptyView() {
 
 function sidebarView() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
-  const selectedSections = Object.values(state.sections).some(Boolean);
-  const canGenerate = Boolean(product && state.monthId && selectedSections);
+  const canGenerate = Boolean(product && state.monthId);
   return `
     <aside class="sidebar">
       <div class="field">
@@ -981,20 +980,6 @@ function sidebarView() {
           <option value="">Elige una opción de mes</option>
           ${renderSelectOptions(MONTHS, state.monthId, (item) => `${item.id} · ${item.name}`)}
         </select>
-      </div>
-      <div class="field">
-        <span class="mini-label">Secciones</span>
-        <div class="section-options">
-          ${Object.entries(SECTIONS)
-            .map(
-              ([key, section]) => `
-              <label class="check-row">
-                <input type="checkbox" data-section="${key}" ${state.sections[key] ? "checked" : ""}>
-                <span>${section.label}</span>
-              </label>`,
-            )
-            .join("")}
-        </div>
       </div>
       <div class="actions">
         <button class="button" data-action="generate" ${state.loading || !canGenerate ? "disabled" : ""}>${state.loading ? "Leyendo..." : "Generar reporte"}</button>
@@ -1077,9 +1062,8 @@ function downloadReportPdf() {
 async function generateReport() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
   const month = MONTHS.find((item) => item.id === state.monthId);
-  const selectedSections = Object.values(state.sections).some(Boolean);
-  if (!product || !month || !selectedSections) {
-    state.error = "Selecciona producto, mes y al menos una sección antes de generar el reporte.";
+  if (!product || !month) {
+    state.error = "Selecciona producto y mes antes de generar el reporte.";
     render();
     return;
   }
@@ -1121,13 +1105,6 @@ function bindEvents() {
     state.selectedTrendMonth = null;
     state.error = "";
     render();
-  });
-  document.querySelectorAll("[data-section]").forEach((input) => {
-    input.addEventListener("change", (event) => {
-      state.sections[event.target.dataset.section] = event.target.checked;
-      state.error = "";
-      render();
-    });
   });
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", async (event) => {
