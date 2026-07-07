@@ -63,6 +63,23 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { label: "Sal", index: 13 },
     ],
   },
+  "03": {
+    stockFinalCol: 8,
+    rendimientoCol: 6,
+    materiaColumns: [
+      { label: "Pulpa (Bolsas)", index: 11 },
+      { label: "Serrano (KG)", index: 12 },
+      { label: "Jalapeño Cocido (KG)", index: 13 },
+      { label: "Tomate Verde (KG)", index: 14 },
+      { label: "Tomatillo (KG)", index: 15 },
+      { label: "Cilantro (KG)", index: 16 },
+      { label: "Sal (KG)", index: 17 },
+      { label: "Hielo (KG)", index: 18 },
+      { label: "Agua (LT)", index: 19 },
+      { label: "Agua chile (LT)", index: 20 },
+      { label: "Aceite (LT)", index: 21 },
+    ],
+  },
 };
 
 function unitsFor(product) {
