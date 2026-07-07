@@ -40,7 +40,7 @@ const PRODUCT_UNITS = {
   "01": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
   "02": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
   "03": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/olla" },
-  "04": { pedido: "kg", produccion: "bolsas", stock: "kg", rendimiento: "bolsas/prod." },
+  "04": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
   "05": { pedido: "bolsas / kg", produccion: "bolsas / kg", stock: "bolsas", rendimiento: "prod." },
   "06": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
   "07": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
@@ -84,9 +84,16 @@ const PRODUCT_COLUMN_OVERRIDES = {
     stockIniCol: 3,
     pedidosCol: 4,
     stockFinalCol: 21,
+    produccionCol: 15,
+    ollasCol: 16,
+    rendimientoCol: 17,
     extraPedidoColumns: [
       { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1 KG)", index: 5, color: "#d97706" },
       { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (2 KG)", index: 7, color: "#7c3aed" },
+    ],
+    extraProduccionColumns: [
+      { key: "produccion_chicas_1kg", label: "Producción en Bolsas Chicas (1 KG)", index: 13 },
+      { key: "produccion_grandes_2kg", label: "Producción en Bolsas Grandes (2 KG)", index: 14 },
     ],
   },
 };
@@ -282,10 +289,11 @@ function parseProductionSheet(rows, product, month) {
   const sectionRow = chooseGroupRow(rows);
   const columnOverride = PRODUCT_COLUMN_OVERRIDES[product.id] || {};
   const extraPedidoColumns = columnOverride.extraPedidoColumns || [];
+  const extraProduccionColumns = columnOverride.extraProduccionColumns || [];
   const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = columnOverride.pedidosCol ?? findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
-  const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
-  const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
+  const produccionCol = columnOverride.produccionCol ?? findMetricColumn(headers, ["produccion"], ["control"], 4);
+  const ollasCol = columnOverride.ollasCol ?? findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = columnOverride.rendimientoCol ?? findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
   const stockFinalCol = columnOverride.stockFinalCol ?? findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
   const molcaMateriaLabels = [
@@ -319,7 +327,7 @@ function parseProductionSheet(rows, product, month) {
   const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
   for (const row of monthRows) {
-    const hasData = [stockIniCol, pedidosCol, produccionCol, ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index)]
+    const hasData = [stockIniCol, pedidosCol, produccionCol, ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index)]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
     if (!hasData && !day) continue;
@@ -335,6 +343,7 @@ function parseProductionSheet(rows, product, month) {
       rendimiento: number(row[rendimientoCol]),
       stock_final: number(row[stockFinalCol]),
       ...Object.fromEntries(extraPedidoColumns.map(({ key, index }) => [key, number(row[index])])),
+      ...Object.fromEntries(extraProduccionColumns.map(({ key, index }) => [key, number(row[index])])),
       materias: materiaColumns.map(({ label, index }) => ({
         insumo: String(label || `Col ${index + 1}`).replace(/\s+/g, " ").trim(),
         cantidad: number(row[index]),
@@ -359,6 +368,17 @@ function parseProductionSheet(rows, product, month) {
     total: dailyRows.reduce((total, row) => total + number(row.materias[index]?.cantidad), 0),
   }));
 
+  const extraPedidoTotals = extraPedidoColumns.map(({ key, label }) => ({
+    key,
+    label,
+    total: sum(dailyRows, key),
+  }));
+  const extraProduccionTotals = extraProduccionColumns.map(({ key, label }) => ({
+    key,
+    label,
+    total: sum(dailyRows, key),
+  }));
+
   const extraPedidoCharts = extraPedidoColumns.map(({ key, label, color }) => ({
     key,
     label,
@@ -379,14 +399,16 @@ function parseProductionSheet(rows, product, month) {
       `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
       `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
       `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} ${units.rendimiento} con ${consistency} ` +
-      `(CV ${cv.toFixed(1)}%). El mayor pedido fue ${topPedido.pedidos} cub el ${topPedido.dia} ${topPedido.fecha}; ` +
-      `la mayor producción fue ${topProduccion.produccion} cub el ${topProduccion.dia} ${topProduccion.fecha}.`,
+      `(CV ${cv.toFixed(1)}%). El mayor pedido fue ${format(topPedido.pedidos)} ${units.pedido} el ${topPedido.dia} ${topPedido.fecha}; ` +
+      `la mayor producción fue ${format(topProduccion.produccion)} ${units.produccion} el ${topProduccion.dia} ${topProduccion.fecha}.`,
     kpis: {
       totalPedidos,
       totalProduccion,
       totalOllas,
       promedioPedidos: avg(dailyRows, "pedidos"),
       promedioProduccion: avg(dailyRows, "produccion"),
+      extraPedidoTotals,
+      extraProduccionTotals,
       rendimientoPromedio,
       sigma,
       cv,
@@ -404,7 +426,14 @@ function parseProductionSheet(rows, product, month) {
       ...Object.fromEntries(extraPedidoColumns.map(({ key }) => [key, row[key]])),
     })),
     extraPedidoCharts,
-    produccion: dailyRows.map(({ dia, fecha, produccion, ollas, rendimiento }) => ({ dia, fecha, produccion, ollas, rendimiento })),
+    produccion: dailyRows.map((row) => ({
+      dia: row.dia,
+      fecha: row.fecha,
+      produccion: row.produccion,
+      ollas: row.ollas,
+      rendimiento: row.rendimiento,
+      ...Object.fromEntries(extraProduccionColumns.map(({ key }) => [key, row[key]])),
+    })),
     materias: materiaTotals,
     units,
   };
@@ -741,6 +770,41 @@ function selectedExtraPedidoDetail(chart) {
     </div>`;
 }
 
+function renderKpiCard(label, value, note) {
+  return '<div class="kpi"><div class="kpi-label">' + label + '</div><div class="kpi-value">' + value + '</div><div class="kpi-note">' + note + '</div></div>';
+}
+
+function renderKpis(report) {
+  if (report.product.id === "04") {
+    const pedidoChicas = report.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_chicas_1kg")?.total || 0;
+    const pedidoGrandes = report.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_grandes_2kg")?.total || 0;
+    const produccionChicas = report.kpis.extraProduccionTotals?.find((item) => item.key === "produccion_chicas_1kg")?.total || 0;
+    const produccionGrandes = report.kpis.extraProduccionTotals?.find((item) => item.key === "produccion_grandes_2kg")?.total || 0;
+
+    return '<section class="kpi-section">' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="kpis kpis-three">' +
+        renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
+        renderKpiCard("Bolsas chicas", format(pedidoChicas), "bolsas de 1 kg") +
+        renderKpiCard("Bolsas grandes", format(pedidoGrandes), "bolsas de 2 kg") +
+      '</div></div>' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-five">' +
+        renderKpiCard("Producción KG", format(report.kpis.totalProduccion), "kg del mes") +
+        renderKpiCard("Bolsas chicas", format(produccionChicas), "bolsas de 1 kg") +
+        renderKpiCard("Bolsas grandes", format(produccionGrandes), "bolsas de 2 kg") +
+        renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
+        renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación") +
+      '</div></div>' +
+    '</section>';
+  }
+
+  return '<section class="kpis">' +
+    renderKpiCard("Pedidos", format(report.kpis.totalPedidos), report.units.pedido + " del mes") +
+    renderKpiCard("Producción", format(report.kpis.totalProduccion), report.units.produccion) +
+    renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
+    renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación") +
+  '</section>';
+}
+
 function reportView(report) {
   const visible = state.sections;
   return html`
@@ -753,12 +817,7 @@ function reportView(report) {
       </header>
       <div class="content">
         <p class="summary">${report.summary}</p>
-        <section class="kpis">
-          <div class="kpi"><div class="kpi-label">Pedidos</div><div class="kpi-value">${format(report.kpis.totalPedidos)}</div><div class="kpi-note">${report.units.pedido} del mes</div></div>
-          <div class="kpi"><div class="kpi-label">Producción</div><div class="kpi-value">${format(report.kpis.totalProduccion)}</div><div class="kpi-note">${report.units.produccion}</div></div>
-          <div class="kpi"><div class="kpi-label">Rendimiento</div><div class="kpi-value">${format(report.kpis.rendimientoPromedio, 2)}</div><div class="kpi-note">${report.units.rendimiento}</div></div>
-          <div class="kpi"><div class="kpi-label">Consistencia</div><div class="kpi-value">${format(report.kpis.cv, 1)}%</div><div class="kpi-note">coeficiente de variación</div></div>
-        </section>
+        ${renderKpis(report)}
 
         <div class="report-stack">
           ${visible.pedidos ? `

@@ -297,6 +297,33 @@ button {
   margin-bottom: 18px;
 }
 
+.kpi-section {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.kpi-group-title {
+  margin: 0 0 8px;
+  color: #526071;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kpi-section .kpis {
+  margin-bottom: 0;
+}
+
+.kpis-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.kpis-five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .kpi {
   border: 1px solid #e2e7ef;
   border-radius: 8px;
@@ -562,7 +589,9 @@ tr:last-child td {
     display: none;
   }
 
-  .kpis {
+  .kpis,
+  .kpis-three,
+  .kpis-five {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -736,5 +765,13 @@ tr:last-child td {
 
   .chart {
     min-height: 240px;
+  }
+}
+
+@media (max-width: 520px) {
+  .kpis,
+  .kpis-three,
+  .kpis-five {
+    grid-template-columns: 1fr;
   }
 }
