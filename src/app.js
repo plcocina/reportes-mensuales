@@ -40,7 +40,7 @@ const PRODUCT_UNITS = {
   "01": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
   "02": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
   "03": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/olla" },
-  "04": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
+  "04": { pedido: "kg", produccion: "bolsas", stock: "kg", rendimiento: "bolsas/prod." },
   "05": { pedido: "bolsas / kg", produccion: "bolsas / kg", stock: "bolsas", rendimiento: "prod." },
   "06": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
   "07": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
@@ -81,9 +81,11 @@ const PRODUCT_COLUMN_OVERRIDES = {
     ],
   },
   "04": {
+    stockIniCol: 3,
+    stockFinalCol: 21,
     extraPedidoColumns: [
-      { key: "pedidos_chicas_1kg", label: "Chicas 1kg (Bolsas)", index: 5, color: "#d97706" },
-      { key: "pedidos_grandes_2kg", label: "Grandes 2kg (Bolsas)", index: 7, color: "#7c3aed" },
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1 KG)", index: 5, color: "#d97706" },
+      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (2 KG)", index: 7, color: "#7c3aed" },
     ],
   },
 };
@@ -392,7 +394,14 @@ function parseProductionSheet(rows, product, month) {
       highRendimiento,
       lowRendimiento,
     },
-    pedidos: dailyRows.map(({ dia, fecha, pedidos, stock_ini, stock_final }) => ({ dia, fecha, pedidos, stock_ini, stock_final })),
+    pedidos: dailyRows.map((row) => ({
+      dia: row.dia,
+      fecha: row.fecha,
+      pedidos: row.pedidos,
+      stock_ini: row.stock_ini,
+      stock_final: row.stock_final,
+      ...Object.fromEntries(extraPedidoColumns.map(({ key }) => [key, row[key]])),
+    })),
     extraPedidoCharts,
     produccion: dailyRows.map(({ dia, fecha, produccion, ollas, rendimiento }) => ({ dia, fecha, produccion, ollas, rendimiento })),
     materias: materiaTotals,
@@ -718,7 +727,6 @@ function selectedExtraPedidoDetail(chart) {
 
   const cards = [
     ["Día", `${row.dia} ${row.fecha}`],
-    ["Pedido", chart.label],
     ["Cantidad", `${format(row[chart.key])} bolsas`],
   ];
 
@@ -766,7 +774,12 @@ function reportView(report) {
               </section>`).join("") || ""}
             <section class="panel">
               <h3 class="panel-title">Tabla de pedidos</h3>
-              ${renderTable(report.pedidos, [
+              ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "pedidos", label: "Pedidos en KG", format: (v) => format(v) },
+                { key: "pedidos_chicas_1kg", label: "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
+                { key: "pedidos_grandes_2kg", label: "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) },
+              ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
                 { key: "stock_ini", label: `Stock inicial (${report.units.stock})`, format: (v) => format(v) },
