@@ -82,6 +82,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
   },
   "04": {
     stockIniCol: 3,
+    pedidosCol: 4,
     stockFinalCol: 21,
     extraPedidoColumns: [
       { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1 KG)", index: 5, color: "#d97706" },
@@ -282,7 +283,7 @@ function parseProductionSheet(rows, product, month) {
   const columnOverride = PRODUCT_COLUMN_OVERRIDES[product.id] || {};
   const extraPedidoColumns = columnOverride.extraPedidoColumns || [];
   const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
-  const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
+  const pedidosCol = columnOverride.pedidosCol ?? findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
   const ollasCol = findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = columnOverride.rendimientoCol ?? findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
