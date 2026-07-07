@@ -95,6 +95,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { key: "produccion_chicas_1kg", label: "Producción en Bolsas Chicas (1 KG)", index: 13 },
       { key: "produccion_grandes_2kg", label: "Producción en Bolsas Grandes (2 KG)", index: 14 },
     ],
+    materiaRange: { headerRow: 2, startCol: 24, endCol: 35 },
   },
 };
 
@@ -309,6 +310,14 @@ function parseProductionSheet(rows, product, month) {
   ];
   let materiaColumns = product.id === "01"
     ? molcaMateriaLabels.map((label, offset) => ({ label, index: 12 + offset }))
+    : columnOverride.materiaRange
+    ? Array.from(
+        { length: columnOverride.materiaRange.endCol - columnOverride.materiaRange.startCol + 1 },
+        (_, offset) => {
+          const index = columnOverride.materiaRange.startCol + offset;
+          return { label: rows[columnOverride.materiaRange.headerRow]?.[index], index };
+        },
+      ).filter((item) => cleanText(item.label))
     : columnOverride.materiaColumns?.map((column) => typeof column === "number" ? ({ label: headers[column], index: column }) : column) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
     const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
