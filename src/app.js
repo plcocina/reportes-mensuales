@@ -42,7 +42,7 @@ const PRODUCT_UNITS = {
   "03": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/olla" },
   "04": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
   "05": { pedido: "kg", produccion: "kg", stock: "bolsas", rendimiento: "kg/olla" },
-  "06": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
+  "06": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
   "07": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
   "08": { pedido: "bidones / lt", produccion: "bidones / lt", stock: "bidones", rendimiento: "lt/bidón" },
   "09": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
@@ -129,6 +129,34 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { label: "Serrano (KG)", index: 15 },
       { label: "Tocino Crudo (KG)", index: 16 },
       { label: "Aceite (LT)", index: 17 },
+    ],
+  },
+  "06": {
+    pedidosCol: 6,
+    produccionCol: 13,
+    ollasCol: 14,
+    rendimientoCol: 15,
+    hidePedidoStockDetail: true,
+    extraPedidoColumns: [
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1.6 KG)", index: 4, color: "#d97706" },
+      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (5 KG)", index: 5, color: "#7c3aed" },
+    ],
+    extraProduccionColumns: [
+      { key: "produccion_chicas_1kg", label: "Producción en Bolsas Chicas (1.6 KG)", index: 11 },
+      { key: "produccion_grandes_2kg", label: "Producción en Bolsas Grandes (5 KG)", index: 12 },
+    ],
+    materiaColumns: [
+      { label: "Codito (KG)", index: 18 },
+      { label: "Jamón (KG)", index: 19 },
+      { label: "Apio (KG)", index: 20 },
+      { label: "Zanahoria (KG)", index: 21 },
+      { label: "Crema (KG)", index: 22 },
+      { label: "Mayonesa (KG)", index: 23 },
+      { label: "Cebolla (KG)", index: 24 },
+      { label: "Cond. 1 Mezcla (Sobre)", index: 25 },
+      { label: "Cond. 2 Codito (Sobre)", index: 26 },
+      { label: "Agua (LT)", index: 27 },
+      { label: "Aceite (LT)", index: 28 },
     ],
   },
 };
@@ -746,12 +774,21 @@ function monthlyTrendPanel(report) {
   if (report.kpis.extraPedidoTotals?.length) {
     configs.push({
       key: "pedidosChicas",
-      title: report.product.id === "05" ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG" : "Fiebre mensual de pedidos en Bolsas Chicas",
+      title: report.product.id === "05"
+        ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG"
+        : report.product.id === "06"
+        ? "Fiebre mensual de pedidos en Bolsas Chicas de 1.6 KG"
+        : "Fiebre mensual de pedidos en Bolsas Chicas",
       unit: "bolsas",
       color: "#d97706",
     });
     if (report.kpis.extraPedidoTotals.some((item) => item.key === "pedidos_grandes_2kg")) {
-      configs.push({ key: "pedidosGrandes", title: "Fiebre mensual de pedidos en Bolsas Grandes", unit: "bolsas", color: "#7c3aed" });
+      configs.push({
+        key: "pedidosGrandes",
+        title: report.product.id === "06" ? "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG" : "Fiebre mensual de pedidos en Bolsas Grandes",
+        unit: "bolsas",
+        color: "#7c3aed",
+      });
     }
   }
 
@@ -788,7 +825,7 @@ function selectedDayDetail(report, section) {
   const units = report.units || unitsFor(report.product);
 
   const cards = section === "pedidos"
-    ? report.product.id === "05"
+    ? PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hidePedidoStockDetail || report.product.id === "05"
       ? [
           ["Día", `${pedido.dia} ${pedido.fecha}`],
           ["Pedidos", `${format(pedido.pedidos)} ${units.pedido}`],
@@ -855,8 +892,9 @@ function renderKpis(report) {
     const produccionGrandes = report.kpis.extraProduccionTotals?.find((item) => item.key === "produccion_grandes_2kg")?.total || 0;
     const isArroz = report.product.id === "04";
     const isMezcla = report.product.id === "05";
-    const chicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : "bolsas chicas";
-    const grandeNote = isArroz ? "bolsas de 2 kg" : "bolsas grandes";
+    const isCodito = report.product.id === "06";
+    const chicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito ? "bolsas de 1.6 kg" : "bolsas chicas";
+    const grandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : "bolsas grandes";
     const pedidoCards =
       renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
       renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(pedidoChicas), chicaNote) +
@@ -914,8 +952,8 @@ function reportView(report) {
               ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: "Pedidos en KG", format: (v) => format(v) },
-                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
-                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
+                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" ? "Pedidos en Bolsas Chicas (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
+                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "06" ? "Pedidos en Bolsas Grandes (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
