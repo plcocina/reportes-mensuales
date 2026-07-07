@@ -788,12 +788,17 @@ function selectedDayDetail(report, section) {
   const units = report.units || unitsFor(report.product);
 
   const cards = section === "pedidos"
-    ? [
-        ["Día", `${pedido.dia} ${pedido.fecha}`],
-        ["Pedidos", `${format(pedido.pedidos)} ${units.pedido}`],
-        ["Stock inicial", `${format(pedido.stock_ini)} ${units.stock}`],
-        ["Stock final", `${format(pedido.stock_final)} ${units.stock}`],
-      ]
+    ? report.product.id === "05"
+      ? [
+          ["Día", `${pedido.dia} ${pedido.fecha}`],
+          ["Pedidos", `${format(pedido.pedidos)} ${units.pedido}`],
+        ]
+      : [
+          ["Día", `${pedido.dia} ${pedido.fecha}`],
+          ["Pedidos", `${format(pedido.pedidos)} ${units.pedido}`],
+          ["Stock inicial", `${format(pedido.stock_ini)} ${units.stock}`],
+          ["Stock final", `${format(pedido.stock_final)} ${units.stock}`],
+        ]
     : section === "rendimiento"
     ? [
         ["Día", `${rendimiento.dia} ${rendimiento.fecha}`],
