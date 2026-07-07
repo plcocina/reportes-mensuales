@@ -711,6 +711,27 @@ function selectedDayDetail(report, section) {
     </div>`;
 }
 
+function selectedExtraPedidoDetail(chart) {
+  if (state.selectedDay?.section !== chart.key) return "";
+  const row = chart.rows.find((item) => item.fecha === state.selectedDay.fecha);
+  if (!row) return "";
+
+  const cards = [
+    ["Día", `${row.dia} ${row.fecha}`],
+    ["Pedido", chart.label],
+    ["Cantidad", `${format(row[chart.key])} bolsas`],
+  ];
+
+  return `
+    <div class="day-detail">
+      ${cards.map(([label, value]) => `
+        <div class="day-detail-card">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </div>`).join("")}
+    </div>`;
+}
+
 function reportView(report) {
   const visible = state.sections;
   return html`
@@ -733,7 +754,7 @@ function reportView(report) {
         <div class="report-stack">
           ${visible.pedidos ? `
             <section class="panel">
-              <h3 class="panel-title">Pedidos por día</h3>
+              <h3 class="panel-title">Pedidos por día en KG</h3>
               ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
               ${selectedDayDetail(report, "pedidos")}
             </section>
@@ -741,6 +762,7 @@ function reportView(report) {
               <section class="panel">
                 <h3 class="panel-title">${chart.label}</h3>
                 ${barChart(chart.rows, chart.key, chart.color, chart.average, chart.key)}
+                ${selectedExtraPedidoDetail(chart)}
               </section>`).join("") || ""}
             <section class="panel">
               <h3 class="panel-title">Tabla de pedidos</h3>
