@@ -58,9 +58,9 @@ const PRODUCT_COLUMN_OVERRIDES = {
     stockFinalCol: 8,
     rendimientoCol: 6,
     materiaColumns: [
-      { label: "Tomate rojo", index: 11 },
-      { label: "Serrano", index: 12 },
-      { label: "Sal", index: 13 },
+      { label: "Tomate (KG)", index: 11 },
+      { label: "Serrano (KG)", index: 12 },
+      { label: "Sal (KG)", index: 13 },
     ],
   },
   "03": {
