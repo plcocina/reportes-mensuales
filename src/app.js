@@ -80,6 +80,12 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { label: "Aceite (LT)", index: 21 },
     ],
   },
+  "04": {
+    extraPedidoColumns: [
+      { key: "pedidos_chicas_1kg", label: "Chicas 1kg (Bolsas)", index: 5, color: "#d97706" },
+      { key: "pedidos_grandes_2kg", label: "Grandes 2kg (Bolsas)", index: 7, color: "#7c3aed" },
+    ],
+  },
 };
 
 function unitsFor(product) {
@@ -272,6 +278,7 @@ function parseProductionSheet(rows, product, month) {
   const headers = chooseHeaderRow(rows);
   const sectionRow = chooseGroupRow(rows);
   const columnOverride = PRODUCT_COLUMN_OVERRIDES[product.id] || {};
+  const extraPedidoColumns = columnOverride.extraPedidoColumns || [];
   const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = findMetricColumn(headers, ["produccion"], ["control"], 4);
@@ -309,7 +316,7 @@ function parseProductionSheet(rows, product, month) {
   const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
   for (const row of monthRows) {
-    const hasData = [stockIniCol, pedidosCol, produccionCol, ollasCol, rendimientoCol, stockFinalCol]
+    const hasData = [stockIniCol, pedidosCol, produccionCol, ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index)]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
     if (!hasData && !day) continue;
@@ -324,6 +331,7 @@ function parseProductionSheet(rows, product, month) {
       ollas: number(row[ollasCol]),
       rendimiento: number(row[rendimientoCol]),
       stock_final: number(row[stockFinalCol]),
+      ...Object.fromEntries(extraPedidoColumns.map(({ key, index }) => [key, number(row[index])])),
       materias: materiaColumns.map(({ label, index }) => ({
         insumo: String(label || `Col ${index + 1}`).replace(/\s+/g, " ").trim(),
         cantidad: number(row[index]),
@@ -346,6 +354,14 @@ function parseProductionSheet(rows, product, month) {
   const materiaTotals = materiaColumns.map(({ label }, index) => ({
     insumo: String(label || `Insumo ${index + 1}`).replace(/\s+/g, " ").trim(),
     total: dailyRows.reduce((total, row) => total + number(row.materias[index]?.cantidad), 0),
+  }));
+
+  const extraPedidoCharts = extraPedidoColumns.map(({ key, label, color }) => ({
+    key,
+    label,
+    color,
+    average: avg(dailyRows, key),
+    rows: dailyRows.map(({ dia, fecha, [key]: value }) => ({ dia, fecha, [key]: value })),
   }));
 
   const sigma = std(rendimientos);
@@ -377,6 +393,7 @@ function parseProductionSheet(rows, product, month) {
       lowRendimiento,
     },
     pedidos: dailyRows.map(({ dia, fecha, pedidos, stock_ini, stock_final }) => ({ dia, fecha, pedidos, stock_ini, stock_final })),
+    extraPedidoCharts,
     produccion: dailyRows.map(({ dia, fecha, produccion, ollas, rendimiento }) => ({ dia, fecha, produccion, ollas, rendimiento })),
     materias: materiaTotals,
     units,
@@ -720,6 +737,11 @@ function reportView(report) {
               ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
               ${selectedDayDetail(report, "pedidos")}
             </section>
+            ${report.extraPedidoCharts?.map((chart) => `
+              <section class="panel">
+                <h3 class="panel-title">${chart.label}</h3>
+                ${barChart(chart.rows, chart.key, chart.color, chart.average, chart.key)}
+              </section>`).join("") || ""}
             <section class="panel">
               <h3 class="panel-title">Tabla de pedidos</h3>
               ${renderTable(report.pedidos, [
