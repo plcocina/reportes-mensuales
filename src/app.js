@@ -57,7 +57,11 @@ const PRODUCT_COLUMN_OVERRIDES = {
     stockIniCol: 1,
     stockFinalCol: 8,
     rendimientoCol: 6,
-    materiaColumns: [11, 12, 13],
+    materiaColumns: [
+      { label: "Tomate rojo", index: 11 },
+      { label: "Serrano", index: 12 },
+      { label: "Sal", index: 13 },
+    ],
   },
 };
 
@@ -270,7 +274,7 @@ function parseProductionSheet(rows, product, month) {
   ];
   let materiaColumns = product.id === "01"
     ? molcaMateriaLabels.map((label, offset) => ({ label, index: 12 + offset }))
-    : columnOverride.materiaColumns?.map((index) => ({ label: headers[index], index })) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
+    : columnOverride.materiaColumns?.map((column) => typeof column === "number" ? ({ label: headers[column], index: column }) : column) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
     const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
     const nextGroup = materiaStart >= 0
