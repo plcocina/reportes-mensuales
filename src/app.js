@@ -668,8 +668,8 @@ function lineChart(rows) {
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
       <rect x="${pad.left}" y="${bandTop}" width="${chartW}" height="${bandBottom - bandTop}" fill="#6255d9" opacity="0.08"></rect>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
-      <rect x="${width - pad.right - 180}" y="${pad.top - 30}" width="176" height="24" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
-      <text x="${width - pad.right - 92}" y="${pad.top - 13}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
+      <rect x="${width - pad.right - 280}" y="${pad.top - 38}" width="268" height="38" rx="9" fill="#ffffff" stroke="#cfd6e2" stroke-width="1.5"></rect>
+      <text x="${width - pad.right - 146}" y="${pad.top - 13}" text-anchor="middle" font-size="18" font-weight="900" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
       <path d="${path}" fill="none" stroke="#6255d9" stroke-width="3"></path>
       ${dots}
     </svg>`;
