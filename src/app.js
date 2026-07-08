@@ -951,9 +951,9 @@ function reportView(report) {
               <h3 class="panel-title">Tabla de pedidos</h3>
               ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
-                { key: "pedidos", label: "Pedidos en KG", format: (v) => format(v) },
-                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" ? "Pedidos en Bolsas Chicas (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
-                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "06" ? "Pedidos en Bolsas Grandes (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
+                { key: "pedidos", label: report.product.id === "06" ? "PEDIDOS KG" : "Pedidos en KG", format: (v) => format(v) },
+                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" ? "BOLSAS CHICAS (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
+                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "06" ? "BOLSAS GRANDES (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
