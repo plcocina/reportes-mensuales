@@ -1060,10 +1060,13 @@ function renderKpis(report) {
     const pedidoGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "bolsas de 15 kg" : "bolsas grandes";
     const produccionChicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito ? "bolsas de 1.6 kg" : isEnsalada ? "kits de 1.6 kg" : "bolsas chicas";
     const produccionGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "kits de 5 kg" : "bolsas grandes";
-    const pedidoCards =
-      renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
-      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(pedidoChicas), pedidoChicaNote) +
-      (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(pedidoGrandes), pedidoGrandeNote));
+    const pedidoCards = isEnsalada
+      ? renderKpiCard("Bolsas Chicas", format(pedidoChicas), pedidoChicaNote) +
+        renderKpiCard("Bolsas Grandes", format(pedidoGrandes), pedidoGrandeNote) +
+        renderKpiCard("Equivalencia en KG", format(report.kpis.totalPedidos), "kg del mes")
+      : renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
+        renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(pedidoChicas), pedidoChicaNote) +
+        (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(pedidoGrandes), pedidoGrandeNote));
     const produccionCards = isEnsalada
       ? renderKpiCard("Bolsas Chicas", format(produccionChicas), produccionChicaNote) +
         renderKpiCard("Bolsas Grandes", format(produccionGrandes), produccionGrandeNote) +
