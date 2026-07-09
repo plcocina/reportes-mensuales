@@ -43,7 +43,7 @@ const PRODUCT_UNITS = {
   "04": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
   "05": { pedido: "kg", produccion: "kg", stock: "bolsas", rendimiento: "kg/olla" },
   "06": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
-  "07": { pedido: "kg", produccion: "bolsas", stock: "bolsas", rendimiento: "bolsas/prod." },
+  "07": { pedido: "kg", produccion: "kits", stock: "bolsas", rendimiento: "" },
   "08": { pedido: "bidones / lt", produccion: "bidones / lt", stock: "bidones", rendimiento: "lt/bidón" },
   "09": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
   "10": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
@@ -157,6 +157,33 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { label: "Cond. 2 Codito (Sobre)", index: 26 },
       { label: "Agua (LT)", index: 27 },
       { label: "Aceite (LT)", index: 28 },
+    ],
+  },
+  "07": {
+    stockIniCol: -1,
+    pedidosCol: 3,
+    produccionCol: 11,
+    produccionSumCols: [11, 23],
+    ollasCol: -1,
+    rendimientoCol: -1,
+    stockFinalCol: -1,
+    hidePedidoStockDetail: true,
+    hideRendimientoSection: true,
+    extraPedidoColumns: [
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1.6 KG)", index: 1, color: "#d97706" },
+      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (15 KG)", index: 2, color: "#7c3aed" },
+    ],
+    extraProduccionColumns: [
+      { key: "produccion_chicas_1kg", label: "Producción Bolsas Chicas (kits 1.6 KG)", index: 11 },
+      { key: "produccion_grandes_2kg", label: "Producción Bolsas Grandes (kits 5 KG)", index: 23 },
+    ],
+    materiaColumns: [
+      { label: "Col Morada (KG)", index: 33 },
+      { label: "Col Blanca (KG)", index: 34 },
+      { label: "Zanahoria (KG)", index: 35 },
+      { label: "Mayonesa (KG)", index: 36 },
+      { label: "Condimento (Sobres)", index: 37 },
+      { label: "Porciones de Aderezo", index: 38 },
     ],
   },
 };
@@ -357,6 +384,7 @@ function parseProductionSheet(rows, product, month) {
   const pedidosCol = columnOverride.pedidosCol ?? findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const pedidosSumCols = columnOverride.pedidosSumCols || null;
   const produccionCol = columnOverride.produccionCol ?? findMetricColumn(headers, ["produccion"], ["control"], 4);
+  const produccionSumCols = columnOverride.produccionSumCols || null;
   const ollasCol = columnOverride.ollasCol ?? findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = columnOverride.rendimientoCol ?? findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
   const stockFinalCol = columnOverride.stockFinalCol ?? findHeaderByWords(rows, ["stock", "final"], [], 10, "last");
@@ -399,7 +427,7 @@ function parseProductionSheet(rows, product, month) {
   const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
   for (const row of monthRows) {
-    const hasData = [stockIniCol, ...(pedidosSumCols || [pedidosCol]), produccionCol, ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index)]
+    const hasData = [stockIniCol, ...(pedidosSumCols || [pedidosCol]), ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index)]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
     if (!hasData && !day) continue;
@@ -410,7 +438,7 @@ function parseProductionSheet(rows, product, month) {
       ...day,
       stock_ini: number(row[stockIniCol]),
       pedidos: pedidosSumCols ? pedidosSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[pedidosCol]),
-      produccion: number(row[produccionCol]),
+      produccion: produccionSumCols ? produccionSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[produccionCol]),
       ollas: number(row[ollasCol]),
       rendimiento: number(row[rendimientoCol]),
       stock_final: number(row[stockFinalCol]),
@@ -462,17 +490,22 @@ function parseProductionSheet(rows, product, month) {
   const sigma = std(rendimientos);
   const cv = rendimientoPromedio ? (sigma / rendimientoPromedio) * 100 : 0;
   const consistency = cv < 3 ? "alta consistencia" : cv < 8 ? "variación moderada" : "alta variabilidad";
+  const summary = columnOverride.hideRendimientoSection
+    ? `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
+      `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
+      `El mayor pedido fue ${format(topPedido.pedidos)} ${units.pedido} el ${topPedido.dia} ${topPedido.fecha}; ` +
+      `la mayor producción fue ${format(topProduccion.produccion)} ${units.produccion} el ${topProduccion.dia} ${topProduccion.fecha}.`
+    : `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
+      `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
+      `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} ${units.rendimiento} con ${consistency} ` +
+      `(CV ${cv.toFixed(1)}%). El mayor pedido fue ${format(topPedido.pedidos)} ${units.pedido} el ${topPedido.dia} ${topPedido.fecha}; ` +
+      `la mayor producción fue ${format(topProduccion.produccion)} ${units.produccion} el ${topProduccion.dia} ${topProduccion.fecha}.`;
 
   return {
     product,
     month,
     generatedAt: new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }),
-    summary:
-      `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
-      `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
-      `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} ${units.rendimiento} con ${consistency} ` +
-      `(CV ${cv.toFixed(1)}%). El mayor pedido fue ${format(topPedido.pedidos)} ${units.pedido} el ${topPedido.dia} ${topPedido.fecha}; ` +
-      `la mayor producción fue ${format(topProduccion.produccion)} ${units.produccion} el ${topProduccion.dia} ${topProduccion.fecha}.`,
+    summary,
     kpis: {
       totalPedidos,
       totalProduccion,
@@ -776,7 +809,7 @@ function monthlyTrendPanel(report) {
       key: "pedidosChicas",
       title: report.product.id === "05"
         ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG"
-        : report.product.id === "06"
+        : report.product.id === "06" || report.product.id === "07"
         ? "Fiebre mensual de pedidos en Bolsas Chicas de 1.6 KG"
         : "Fiebre mensual de pedidos en Bolsas Chicas",
       unit: "bolsas",
@@ -785,7 +818,11 @@ function monthlyTrendPanel(report) {
     if (report.kpis.extraPedidoTotals.some((item) => item.key === "pedidos_grandes_2kg")) {
       configs.push({
         key: "pedidosGrandes",
-        title: report.product.id === "06" ? "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG" : "Fiebre mensual de pedidos en Bolsas Grandes",
+        title: report.product.id === "07"
+          ? "Fiebre mensual de pedidos en Bolsas Grandes de 15 KG"
+          : report.product.id === "06"
+          ? "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG"
+          : "Fiebre mensual de pedidos en Bolsas Grandes",
         unit: "bolsas",
         color: "#7c3aed",
       });
@@ -843,6 +880,11 @@ function selectedDayDetail(report, section) {
         ["Producción", `${format(rendimiento.produccion)} ${units.produccion}`],
         ["Ollas", format(rendimiento.ollas)],
       ]
+    : PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection
+    ? [
+        ["Día", `${produccion.dia} ${produccion.fecha}`],
+        ["Producción", `${format(produccion.produccion)} ${units.produccion}`],
+      ]
     : [
         ["Día", `${produccion.dia} ${produccion.fecha}`],
         ["Producción", `${format(produccion.produccion)} ${units.produccion}`],
@@ -893,20 +935,24 @@ function renderKpis(report) {
     const isArroz = report.product.id === "04";
     const isMezcla = report.product.id === "05";
     const isCodito = report.product.id === "06";
-    const chicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito ? "bolsas de 1.6 kg" : "bolsas chicas";
-    const grandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : "bolsas grandes";
+    const isEnsalada = report.product.id === "07";
+    const hideRendimiento = PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection;
+    const pedidoChicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito || isEnsalada ? "bolsas de 1.6 kg" : "bolsas chicas";
+    const pedidoGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "bolsas de 15 kg" : "bolsas grandes";
+    const produccionChicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito ? "bolsas de 1.6 kg" : isEnsalada ? "kits de 1.6 kg" : "bolsas chicas";
+    const produccionGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "kits de 5 kg" : "bolsas grandes";
     const pedidoCards =
       renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
-      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(pedidoChicas), chicaNote) +
-      (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(pedidoGrandes), grandeNote));
+      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(pedidoChicas), pedidoChicaNote) +
+      (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(pedidoGrandes), pedidoGrandeNote));
     const produccionCards =
-      renderKpiCard("Producción KG", format(report.kpis.totalProduccion), "kg del mes") +
-      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(produccionChicas), chicaNote) +
-      (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(produccionGrandes), grandeNote)) +
-      renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
-      renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación");
+      renderKpiCard(isEnsalada ? "Producción kits" : "Producción KG", format(report.kpis.totalProduccion), isEnsalada ? "kits del mes" : "kg del mes") +
+      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : isEnsalada ? "Kits chicas" : "Bolsas chicas", format(produccionChicas), produccionChicaNote) +
+      (isMezcla ? "" : renderKpiCard(isEnsalada ? "Kits grandes" : "Bolsas grandes", format(produccionGrandes), produccionGrandeNote)) +
+      (hideRendimiento ? "" : renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
+      renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación"));
     const pedidoClass = isMezcla ? "kpis kpis-two" : "kpis kpis-three";
-    const produccionClass = isMezcla ? "kpis kpis-four" : "kpis kpis-five";
+    const produccionClass = hideRendimiento ? "kpis kpis-three" : isMezcla ? "kpis kpis-four" : "kpis kpis-five";
     return '<section class="kpi-section">' +
       '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="' + pedidoClass + '">' + pedidoCards + '</div></div>' +
       '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="' + produccionClass + '">' + produccionCards + '</div></div>' +
@@ -951,9 +997,9 @@ function reportView(report) {
               <h3 class="panel-title">Tabla de pedidos</h3>
               ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
-                { key: "pedidos", label: report.product.id === "06" ? "PEDIDOS KG" : "Pedidos en KG", format: (v) => format(v) },
-                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" ? "BOLSAS CHICAS (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
-                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "06" ? "BOLSAS GRANDES (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
+                { key: "pedidos", label: report.product.id === "06" || report.product.id === "07" ? "PEDIDOS KG" : "Pedidos en KG", format: (v) => format(v) },
+                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" || report.product.id === "07" ? "BOLSAS CHICAS (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
+                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "07" ? "BOLSAS GRANDES (15 KG)" : report.product.id === "06" ? "BOLSAS GRANDES (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
@@ -969,18 +1015,24 @@ function reportView(report) {
             </section>
             <section class="panel">
               <h3 class="panel-title">Tabla de producción</h3>
-              ${renderTable(report.produccion, [
+              ${renderTable(report.produccion, PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
+                { key: "produccion_chicas_1kg", label: "Kits chicas (1.6 KG)", format: (v) => format(v) },
+                { key: "produccion_grandes_2kg", label: "Kits grandes (5 KG)", format: (v) => format(v) },
+              ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
                 { key: "ollas", label: "Ollas", format: (v) => format(v) },
                 { key: "rendimiento", label: `Rendimiento (${report.units.rendimiento})`, format: (v) => format(v, 2) },
               ], "produccion")}
             </section>
+            ${PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? "" : `
             <section class="panel">
               <h3 class="panel-title">Rendimiento diario</h3>
               ${lineChart(report.produccion)}
               ${selectedDayDetail(report, "rendimiento")}
-            </section>` : ""}
+            </section>`}` : ""}
           ${visible.materias ? `
             <section class="panel">
               <h3 class="panel-title">Materias primas</h3>
