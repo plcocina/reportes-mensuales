@@ -43,7 +43,7 @@ const PRODUCT_UNITS = {
   "04": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
   "05": { pedido: "kg", produccion: "kg", stock: "bolsas", rendimiento: "kg/olla" },
   "06": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
-  "07": { pedido: "kg", produccion: "kits", stock: "bolsas", rendimiento: "" },
+  "07": { pedido: "kg", produccion: "kg", stock: "bolsas", rendimiento: "" },
   "08": { pedido: "bidones / lt", produccion: "bidones / lt", stock: "bidones", rendimiento: "lt/bidón" },
   "09": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
   "10": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
@@ -438,7 +438,7 @@ function parseProductionSheet(rows, product, month) {
       ...day,
       stock_ini: number(row[stockIniCol]),
       pedidos: pedidosSumCols ? pedidosSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[pedidosCol]),
-      produccion: produccionSumCols ? produccionSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[produccionCol]),
+      produccion: product.id === "07" ? (number(row[11]) * 1.6) + (number(row[23]) * 5) : produccionSumCols ? produccionSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[produccionCol]),
       ollas: number(row[ollasCol]),
       rendimiento: number(row[rendimientoCol]),
       stock_final: number(row[stockFinalCol]),
@@ -945,12 +945,15 @@ function renderKpis(report) {
       renderKpiCard("Total pedidos KG", format(report.kpis.totalPedidos), "kg del mes") +
       renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(pedidoChicas), pedidoChicaNote) +
       (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(pedidoGrandes), pedidoGrandeNote));
-    const produccionCards =
-      renderKpiCard(isEnsalada ? "Producción kits" : "Producción KG", format(report.kpis.totalProduccion), isEnsalada ? "kits del mes" : "kg del mes") +
-      renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : isEnsalada ? "Kits chicas" : "Bolsas chicas", format(produccionChicas), produccionChicaNote) +
-      (isMezcla ? "" : renderKpiCard(isEnsalada ? "Kits grandes" : "Bolsas grandes", format(produccionGrandes), produccionGrandeNote)) +
-      (hideRendimiento ? "" : renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
-      renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación"));
+    const produccionCards = isEnsalada
+      ? renderKpiCard("Bolsas Chicas", format(produccionChicas), produccionChicaNote) +
+        renderKpiCard("Bolsas Grandes", format(produccionGrandes), produccionGrandeNote) +
+        renderKpiCard("Equivalencia en KG", format(report.kpis.totalProduccion), "kg del mes")
+      : renderKpiCard("Producción KG", format(report.kpis.totalProduccion), "kg del mes") +
+        renderKpiCard(isMezcla ? "Bolsas 1.2 KG" : "Bolsas chicas", format(produccionChicas), produccionChicaNote) +
+        (isMezcla ? "" : renderKpiCard("Bolsas grandes", format(produccionGrandes), produccionGrandeNote)) +
+        (hideRendimiento ? "" : renderKpiCard("Rendimiento", format(report.kpis.rendimientoPromedio, 2), report.units.rendimiento) +
+        renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación"));
     const pedidoClass = isMezcla ? "kpis kpis-two" : "kpis kpis-three";
     const produccionClass = hideRendimiento ? "kpis kpis-three" : isMezcla ? "kpis kpis-four" : "kpis kpis-five";
     return '<section class="kpi-section">' +
