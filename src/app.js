@@ -1107,17 +1107,29 @@ function reportView(report) {
 
         <div class="report-stack">
           ${visible.pedidos ? `
-            <section class="panel">
-              <h3 class="panel-title">Pedidos por día en KG</h3>
-              ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
-              ${selectedDayDetail(report, "pedidos")}
-            </section>
-            ${report.extraPedidoCharts?.map((chart) => `
+            ${report.product.id === "07" ? `
+              ${report.extraPedidoCharts?.map((chart) => `
+                <section class="panel">
+                  <h3 class="panel-title">${chart.label}</h3>
+                  ${barChart(chart.rows, chart.key, chart.color, chart.average, chart.key)}
+                  ${selectedExtraPedidoDetail(chart)}
+                </section>`).join("") || ""}
               <section class="panel">
-                <h3 class="panel-title">${chart.label}</h3>
-                ${barChart(chart.rows, chart.key, chart.color, chart.average, chart.key)}
-                ${selectedExtraPedidoDetail(chart)}
-              </section>`).join("") || ""}
+                <h3 class="panel-title">Equivalencia en KG</h3>
+                ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
+                ${selectedDayDetail(report, "pedidos")}
+              </section>` : `
+              <section class="panel">
+                <h3 class="panel-title">Pedidos por día en KG</h3>
+                ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
+                ${selectedDayDetail(report, "pedidos")}
+              </section>
+              ${report.extraPedidoCharts?.map((chart) => `
+                <section class="panel">
+                  <h3 class="panel-title">${chart.label}</h3>
+                  ${barChart(chart.rows, chart.key, chart.color, chart.average, chart.key)}
+                  ${selectedExtraPedidoDetail(chart)}
+                </section>`).join("") || ""}`}
             <section class="panel">
               <h3 class="panel-title">Tabla de pedidos</h3>
               ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
