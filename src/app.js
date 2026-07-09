@@ -182,20 +182,20 @@ const PRODUCT_COLUMN_OVERRIDES = {
         key: "produccion_chicas_ingredientes",
         title: "Producción x Ingrediente (Bolsas Chicas)",
         columns: [
-          { key: "ensalada_chica_col_morada", label: "Col morada", index: 6, color: "#9700ff" },
-          { key: "ensalada_chica_col_blanca", label: "Col Blanca", index: 7, color: "#b7b7b7" },
-          { key: "ensalada_chica_zanahoria", label: "Zanahoria", index: 8, color: "#ff6b00" },
-          { key: "ensalada_chica_aderezo", label: "Aderezo", index: 9, color: "#d5a3bf" },
+          { key: "ensalada_chica_col_morada", label: "Col morada", index: 6, color: "#9700ff", note: "bolsas de 0.130 KG" },
+          { key: "ensalada_chica_col_blanca", label: "Col Blanca", index: 7, color: "#b7b7b7", note: "bolsas de 0.840 KG" },
+          { key: "ensalada_chica_zanahoria", label: "Zanahoria", index: 8, color: "#ff6b00", note: "bolsas de 0.200 KG" },
+          { key: "ensalada_chica_aderezo", label: "Aderezo", index: 9, color: "#d5a3bf", note: "bolsas de 0.500 KG" },
         ],
       },
       {
         key: "produccion_grandes_ingredientes",
         title: "Producción x Ingrediente (Bolsas Grandes)",
         columns: [
-          { key: "ensalada_grande_col_morada", label: "Col morada", index: 18, color: "#9700ff" },
-          { key: "ensalada_grande_col_blanca", label: "Col Blanca", index: 19, color: "#b7b7b7" },
-          { key: "ensalada_grande_zanahoria", label: "Zanahoria", index: 20, color: "#ff6b00" },
-          { key: "ensalada_grande_aderezo", label: "Aderezo", index: 21, color: "#d5a3bf" },
+          { key: "ensalada_grande_col_morada", label: "Col morada", index: 18, color: "#9700ff", note: "bolsas de 0.400 KG" },
+          { key: "ensalada_grande_col_blanca", label: "Col Blanca", index: 19, color: "#b7b7b7", note: "bolsas de 2.500 KG" },
+          { key: "ensalada_grande_zanahoria", label: "Zanahoria", index: 20, color: "#ff6b00", note: "bolsas de 0.600 KG" },
+          { key: "ensalada_grande_aderezo", label: "Aderezo", index: 21, color: "#d5a3bf", note: "bolsas de 1.500 KG" },
         ],
       },
     ],
@@ -765,16 +765,16 @@ function selectedStackedIngredientDetail(chart) {
   const row = (chart.rows || []).find((item) => item.fecha === state.selectedDay.fecha);
   if (!row) return "";
   const cards = [
-    ["Día", `${row.dia} ${row.fecha}`],
-    ["Total", `${format((chart.columns || []).reduce((total, column) => total + number(row[column.key]), 0))}`],
-    ...(chart.columns || []).map((column) => [column.label, format(row[column.key])]),
+    { label: "Día", value: `${row.dia} ${row.fecha}`, note: "" },
+    ...(chart.columns || []).map((column) => ({ label: column.label, value: format(row[column.key]), note: column.note || "" })),
   ];
   return `
     <div class="day-detail">
-      ${cards.map(([label, value]) => `
+      ${cards.map(({ label, value, note }) => `
         <div class="day-detail-card">
           <span>${label}</span>
           <strong>${value}</strong>
+          ${note ? `<span>${note}</span>` : ""}
         </div>`).join("")}
     </div>`;
 }
