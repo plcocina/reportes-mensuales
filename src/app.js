@@ -171,7 +171,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
     hideRendimientoSection: true,
     extraPedidoColumns: [
       { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1.6 KG)", index: 1, color: "#d97706" },
-      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (15 KG)", index: 2, color: "#7c3aed" },
+      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (5 KG)", index: 2, color: "#7c3aed" },
     ],
     extraProduccionColumns: [
       { key: "produccion_chicas_1kg", label: "Producción Bolsas Chicas (kits 1.6 KG)", index: 11 },
@@ -938,7 +938,7 @@ function monthlyTrendPanel(report) {
       configs.push({
         key: "pedidosGrandes",
         title: report.product.id === "07"
-          ? "Fiebre mensual de pedidos en Bolsas Grandes de 15 KG"
+          ? "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG"
           : report.product.id === "06"
           ? "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG"
           : "Fiebre mensual de pedidos en Bolsas Grandes",
@@ -1057,7 +1057,7 @@ function renderKpis(report) {
     const isEnsalada = report.product.id === "07";
     const hideRendimiento = PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection;
     const pedidoChicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito || isEnsalada ? "bolsas de 1.6 kg" : "bolsas chicas";
-    const pedidoGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "bolsas de 15 kg" : "bolsas grandes";
+    const pedidoGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "bolsas de 5 kg" : "bolsas grandes";
     const produccionChicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito ? "bolsas de 1.6 kg" : isEnsalada ? "kits de 1.6 kg" : "bolsas chicas";
     const produccionGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "kits de 5 kg" : "bolsas grandes";
     const pedidoCards = isEnsalada
@@ -1124,7 +1124,7 @@ function reportView(report) {
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: report.product.id === "06" || report.product.id === "07" ? "PEDIDOS KG" : "Pedidos en KG", format: (v) => format(v) },
                 { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" || report.product.id === "07" ? "BOLSAS CHICAS (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
-                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "07" ? "BOLSAS GRANDES (15 KG)" : report.product.id === "06" ? "BOLSAS GRANDES (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
+                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "07" ? "BOLSAS GRANDES (5 KG)" : report.product.id === "06" ? "BOLSAS GRANDES (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
