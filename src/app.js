@@ -179,6 +179,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
     ],
     stackedProductionCharts: [
       {
+        key: "produccion_chicas_ingredientes",
         title: "Producción x Ingrediente (Bolsas Chicas)",
         columns: [
           { key: "ensalada_chica_col_morada", label: "Col morada", index: 6, color: "#9700ff" },
@@ -188,6 +189,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
         ],
       },
       {
+        key: "produccion_grandes_ingredientes",
         title: "Producción x Ingrediente (Bolsas Grandes)",
         columns: [
           { key: "ensalada_grande_col_morada", label: "Col morada", index: 18, color: "#9700ff" },
@@ -702,7 +704,7 @@ function stackedIngredientChart(chart) {
   if (!rows.length || !columns.length) return "";
   const width = 1100;
   const height = 430;
-  const pad = { top: 74, right: 24, bottom: 82, left: 54 };
+  const pad = { top: 64, right: 24, bottom: 82, left: 54 };
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
   const gap = 7;
@@ -710,12 +712,14 @@ function stackedIngredientChart(chart) {
   const totals = rows.map((row) => columns.reduce((total, column) => total + number(row[column.key]), 0));
   const maxValue = Math.max(...totals) * 1.16 || 1;
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => Math.round((maxValue * ratio) / 10) * 10);
+  const selectedFecha = state.selectedDay?.section === chart.key ? state.selectedDay.fecha : null;
   const legend = columns.slice().reverse().map((column, index) => {
-    const x = pad.left + 360 + index * 142;
+    const x = pad.left + 250 + index * 150;
+    const y = height - 24;
     return `
       <g>
-        <rect x="${x}" y="28" width="14" height="14" rx="2" fill="${column.color}"></rect>
-        <text x="${x + 22}" y="40" font-size="14" font-weight="700" fill="#202938">${column.label}</text>
+        <rect x="${x}" y="${y - 12}" width="14" height="14" rx="2" fill="${column.color}"></rect>
+        <text x="${x + 22}" y="${y}" font-size="14" font-weight="800" fill="#202938">${column.label}</text>
       </g>`;
   }).join("");
   const grid = ticks.slice(1).map((tick) => {
@@ -726,6 +730,7 @@ function stackedIngredientChart(chart) {
   }).join("");
   const bars = rows.map((row, index) => {
     const x = pad.left + index * (barW + gap);
+    const selected = selectedFecha === row.fecha;
     let yCursor = pad.top + chartH;
     const segments = columns.map((column) => {
       const value = number(row[column.key]);
@@ -738,20 +743,40 @@ function stackedIngredientChart(chart) {
         ${value && h > 13 ? `<text x="${x + barW / 2}" y="${y + h / 2 + 5}" text-anchor="middle" font-size="12" font-weight="900" fill="${labelFill}">${format(value)}</text>` : ""}`;
     }).join("");
     return `
-      <g>
+      <g class="chart-bar${selected ? " is-selected" : ""}" data-chart-stacked="true" data-section="${chart.key}" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${chart.title}: día ${row.fecha}">
+        <rect class="bar-focus" x="${x - 2}" y="${pad.top}" width="${barW + 4}" height="${chartH}" rx="5"></rect>
         ${segments}
-        <text x="${x + barW / 2}" y="${height - 56}" text-anchor="end" transform="rotate(-50 ${x + barW / 2} ${height - 56})" font-size="11" fill="#263244">${row.dia} ${row.fecha}</text>
+        <text x="${x + barW / 2}" y="${height - 54}" text-anchor="middle" font-size="11" font-weight="800" fill="#526071">${row.fecha}</text>
       </g>`;
   }).join("");
 
   return `
     <svg class="chart stacked-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${chart.title}">
-      <text x="${pad.left}" y="38" font-size="22" font-weight="800" fill="#526071">${chart.title}</text>
-      ${legend}
+      <text x="${pad.left}" y="36" font-size="22" font-weight="800" fill="#526071">${chart.title}</text>
       ${grid}
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#202938" stroke-width="1.5"></line>
       ${bars}
+      ${legend}
     </svg>`;
+}
+
+function selectedStackedIngredientDetail(chart) {
+  if (state.selectedDay?.section !== chart.key) return "";
+  const row = (chart.rows || []).find((item) => item.fecha === state.selectedDay.fecha);
+  if (!row) return "";
+  const cards = [
+    ["Día", `${row.dia} ${row.fecha}`],
+    ["Total", `${format((chart.columns || []).reduce((total, column) => total + number(row[column.key]), 0))}`],
+    ...(chart.columns || []).map((column) => [column.label, format(row[column.key])]),
+  ];
+  return `
+    <div class="day-detail">
+      ${cards.map(([label, value]) => `
+        <div class="day-detail-card">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </div>`).join("")}
+    </div>`;
 }
 
 function lineChart(rows) {
@@ -1105,6 +1130,7 @@ function reportView(report) {
             ${report.stackedProductionCharts?.length ? report.stackedProductionCharts.map((chart) => `
             <section class="panel">
               ${stackedIngredientChart(chart)}
+              ${selectedStackedIngredientDetail(chart)}
             </section>`).join("") : `
             <section class="panel">
               <h3 class="panel-title">Producción por día</h3>
@@ -1331,7 +1357,7 @@ function bindEvents() {
       }
     });
   });
-  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-table-row], [data-chart-month]").forEach((item) => {
+  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-chart-stacked], [data-table-row], [data-chart-month]").forEach((item) => {
     item.addEventListener("click", (event) => {
       const target = event.currentTarget;
       if (target.dataset.month) {
