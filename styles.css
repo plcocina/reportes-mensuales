@@ -454,6 +454,32 @@ button {
   font-size: 18px;
 }
 
+.stacked-detail {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.stacked-detail-day {
+  max-width: 360px;
+}
+
+.stacked-detail-ingredients {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stacked-detail-card small {
+  display: block;
+  margin-top: 4px;
+  color: #69778a;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
 .table-wrap {
   overflow: auto;
   border: 1px solid #e2e7ef;

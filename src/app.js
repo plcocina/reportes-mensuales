@@ -764,18 +764,21 @@ function selectedStackedIngredientDetail(chart) {
   if (state.selectedDay?.section !== chart.key) return "";
   const row = (chart.rows || []).find((item) => item.fecha === state.selectedDay.fecha);
   if (!row) return "";
-  const cards = [
-    { label: "Día", value: `${row.dia} ${row.fecha}`, note: "" },
-    ...(chart.columns || []).map((column) => ({ label: column.label, value: format(row[column.key]), note: column.note || "" })),
-  ];
+  const ingredientCards = (chart.columns || []).map((column) => ({ label: column.label, value: format(row[column.key]), note: column.note || "" }));
   return `
-    <div class="day-detail">
-      ${cards.map(({ label, value, note }) => `
-        <div class="day-detail-card">
-          <span>${label}</span>
-          <strong>${value}</strong>
-          ${note ? `<span>${note}</span>` : ""}
-        </div>`).join("")}
+    <div class="stacked-detail">
+      <div class="day-detail-card stacked-detail-day">
+        <span>Día</span>
+        <strong>${row.dia} ${row.fecha}</strong>
+      </div>
+      <div class="stacked-detail-ingredients">
+        ${ingredientCards.map(({ label, value, note }) => `
+          <div class="day-detail-card stacked-detail-card">
+            <span>${label}</span>
+            <strong>${value}</strong>
+            ${note ? `<small>${note}</small>` : ""}
+          </div>`).join("")}
+      </div>
     </div>`;
 }
 
