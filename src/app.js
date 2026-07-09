@@ -177,6 +177,26 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { key: "produccion_chicas_1kg", label: "Producción Bolsas Chicas (kits 1.6 KG)", index: 11 },
       { key: "produccion_grandes_2kg", label: "Producción Bolsas Grandes (kits 5 KG)", index: 23 },
     ],
+    stackedProductionCharts: [
+      {
+        title: "Producción x Ingrediente (Bolsas Chicas)",
+        columns: [
+          { key: "ensalada_chica_col_morada", label: "Col morada", index: 6, color: "#9700ff" },
+          { key: "ensalada_chica_col_blanca", label: "Col Blanca", index: 7, color: "#b7b7b7" },
+          { key: "ensalada_chica_zanahoria", label: "Zanahoria", index: 8, color: "#ff6b00" },
+          { key: "ensalada_chica_aderezo", label: "Aderezo", index: 9, color: "#d5a3bf" },
+        ],
+      },
+      {
+        title: "Producción x Ingrediente (Bolsas Grandes)",
+        columns: [
+          { key: "ensalada_grande_col_morada", label: "Col morada", index: 18, color: "#9700ff" },
+          { key: "ensalada_grande_col_blanca", label: "Col Blanca", index: 19, color: "#b7b7b7" },
+          { key: "ensalada_grande_zanahoria", label: "Zanahoria", index: 20, color: "#ff6b00" },
+          { key: "ensalada_grande_aderezo", label: "Aderezo", index: 21, color: "#d5a3bf" },
+        ],
+      },
+    ],
     materiaColumns: [
       { label: "Col Morada (KG)", index: 33 },
       { label: "Col Blanca (KG)", index: 34 },
@@ -380,6 +400,8 @@ function parseProductionSheet(rows, product, month) {
   const columnOverride = PRODUCT_COLUMN_OVERRIDES[product.id] || {};
   const extraPedidoColumns = columnOverride.extraPedidoColumns || [];
   const extraProduccionColumns = columnOverride.extraProduccionColumns || [];
+  const stackedProductionConfig = columnOverride.stackedProductionCharts || [];
+  const stackedProductionColumns = stackedProductionConfig.flatMap((chart) => chart.columns || []);
   const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = columnOverride.pedidosCol ?? findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const pedidosSumCols = columnOverride.pedidosSumCols || null;
@@ -427,7 +449,7 @@ function parseProductionSheet(rows, product, month) {
   const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
   for (const row of monthRows) {
-    const hasData = [stockIniCol, ...(pedidosSumCols || [pedidosCol]), ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index)]
+    const hasData = [stockIniCol, ...(pedidosSumCols || [pedidosCol]), ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index), ...stackedProductionColumns.map(({ index }) => index)]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
     if (!hasData && !day) continue;
@@ -444,6 +466,7 @@ function parseProductionSheet(rows, product, month) {
       stock_final: number(row[stockFinalCol]),
       ...Object.fromEntries(extraPedidoColumns.map(({ key, index }) => [key, number(row[index])])),
       ...Object.fromEntries(extraProduccionColumns.map(({ key, index }) => [key, number(row[index])])),
+      ...Object.fromEntries(stackedProductionColumns.map(({ key, index }) => [key, number(row[index])])),
       materias: materiaColumns.map(({ label, index }) => ({
         insumo: String(label || `Col ${index + 1}`).replace(/\s+/g, " ").trim(),
         cantidad: number(row[index]),
@@ -485,6 +508,15 @@ function parseProductionSheet(rows, product, month) {
     color,
     average: avg(dailyRows, key),
     rows: dailyRows.map(({ dia, fecha, [key]: value }) => ({ dia, fecha, [key]: value })),
+  }));
+
+  const stackedProductionCharts = stackedProductionConfig.map((chart) => ({
+    ...chart,
+    rows: dailyRows.map((row) => ({
+      dia: row.dia,
+      fecha: row.fecha,
+      ...Object.fromEntries((chart.columns || []).map(({ key }) => [key, row[key]])),
+    })),
   }));
 
   const sigma = std(rendimientos);
@@ -531,6 +563,7 @@ function parseProductionSheet(rows, product, month) {
       ...Object.fromEntries(extraPedidoColumns.map(({ key }) => [key, row[key]])),
     })),
     extraPedidoCharts,
+    stackedProductionCharts,
     produccion: dailyRows.map((row) => ({
       dia: row.dia,
       fecha: row.fecha,
@@ -659,6 +692,64 @@ function barChart(rows, key, color, average, section) {
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${avgY}" y2="${avgY}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
       <rect x="${width - pad.right - 128}" y="${pad.top - 16}" width="124" height="24" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
       <text x="${width - pad.right - 66}" y="${pad.top + 1}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Media ${format(average, 1)}</text>
+      ${bars}
+    </svg>`;
+}
+
+function stackedIngredientChart(chart) {
+  const rows = chart.rows || [];
+  const columns = chart.columns || [];
+  if (!rows.length || !columns.length) return "";
+  const width = 1100;
+  const height = 430;
+  const pad = { top: 74, right: 24, bottom: 82, left: 54 };
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+  const gap = 7;
+  const barW = Math.max(14, chartW / rows.length - gap);
+  const totals = rows.map((row) => columns.reduce((total, column) => total + number(row[column.key]), 0));
+  const maxValue = Math.max(...totals) * 1.16 || 1;
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => Math.round((maxValue * ratio) / 10) * 10);
+  const legend = columns.slice().reverse().map((column, index) => {
+    const x = pad.left + 360 + index * 142;
+    return `
+      <g>
+        <rect x="${x}" y="28" width="14" height="14" rx="2" fill="${column.color}"></rect>
+        <text x="${x + 22}" y="40" font-size="14" font-weight="700" fill="#202938">${column.label}</text>
+      </g>`;
+  }).join("");
+  const grid = ticks.slice(1).map((tick) => {
+    const y = pad.top + chartH - (tick / maxValue) * chartH;
+    return `
+      <line x1="${pad.left}" x2="${width - pad.right}" y1="${y}" y2="${y}" stroke="#d8dee9"></line>
+      <text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#69778a">${format(tick)}</text>`;
+  }).join("");
+  const bars = rows.map((row, index) => {
+    const x = pad.left + index * (barW + gap);
+    let yCursor = pad.top + chartH;
+    const segments = columns.map((column) => {
+      const value = number(row[column.key]);
+      const h = (value / maxValue) * chartH;
+      const y = yCursor - h;
+      yCursor = y;
+      const labelFill = column.label === "Col Blanca" || column.label === "Aderezo" ? "#111827" : "#ffffff";
+      return `
+        <rect x="${x}" y="${y}" width="${barW}" height="${Math.max(0, h)}" fill="${column.color}"></rect>
+        ${value && h > 13 ? `<text x="${x + barW / 2}" y="${y + h / 2 + 5}" text-anchor="middle" font-size="12" font-weight="900" fill="${labelFill}">${format(value)}</text>` : ""}`;
+    }).join("");
+    return `
+      <g>
+        ${segments}
+        <text x="${x + barW / 2}" y="${height - 56}" text-anchor="end" transform="rotate(-50 ${x + barW / 2} ${height - 56})" font-size="11" fill="#263244">${row.dia} ${row.fecha}</text>
+      </g>`;
+  }).join("");
+
+  return `
+    <svg class="chart stacked-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${chart.title}">
+      <text x="${pad.left}" y="38" font-size="22" font-weight="800" fill="#526071">${chart.title}</text>
+      ${legend}
+      ${grid}
+      <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#202938" stroke-width="1.5"></line>
       ${bars}
     </svg>`;
 }
@@ -1011,11 +1102,15 @@ function reportView(report) {
               ], "pedidos")}
             </section>` : ""}
           ${visible.produccion ? `
+            ${report.stackedProductionCharts?.length ? report.stackedProductionCharts.map((chart) => `
+            <section class="panel">
+              ${stackedIngredientChart(chart)}
+            </section>`).join("") : `
             <section class="panel">
               <h3 class="panel-title">Producción por día</h3>
               ${barChart(report.produccion, "produccion", SECTIONS.produccion.color, report.kpis.promedioProduccion, "produccion")}
               ${selectedDayDetail(report, "produccion")}
-            </section>
+            </section>`}
             <section class="panel">
               <h3 class="panel-title">Tabla de producción</h3>
               ${renderTable(report.produccion, PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? [
