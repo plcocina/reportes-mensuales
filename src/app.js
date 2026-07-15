@@ -117,6 +117,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
     produccionCol: 8,
     ollasCol: 9,
     rendimientoCol: 10,
+    hidePedidoStockDetail: true,
     extraPedidoColumns: [
       { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas de 1.2 KG", index: 2, color: "#d97706" },
     ],
@@ -406,7 +407,6 @@ function parseProductionSheet(rows, product, month) {
   const stackedProductionColumns = stackedProductionConfig.flatMap((chart) => chart.columns || []);
   const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = columnOverride.pedidosCol ?? findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
-  const pedidosSumCols = columnOverride.pedidosSumCols || null;
   const produccionCol = columnOverride.produccionCol ?? findMetricColumn(headers, ["produccion"], ["control"], 4);
   const produccionSumCols = columnOverride.produccionSumCols || null;
   const ollasCol = columnOverride.ollasCol ?? findColumn(headers, (h) => h.includes("ollas"), 5);
@@ -425,14 +425,6 @@ function parseProductionSheet(rows, product, month) {
   ];
   let materiaColumns = product.id === "01"
     ? molcaMateriaLabels.map((label, offset) => ({ label, index: 12 + offset }))
-    : columnOverride.materiaRange
-    ? Array.from(
-        { length: columnOverride.materiaRange.endCol - columnOverride.materiaRange.startCol + 1 },
-        (_, offset) => {
-          const index = columnOverride.materiaRange.startCol + offset;
-          return { label: rows[columnOverride.materiaRange.headerRow]?.[index], index };
-        },
-      ).filter((item) => cleanText(item.label))
     : columnOverride.materiaColumns?.map((column) => typeof column === "number" ? ({ label: headers[column], index: column }) : column) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
     const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
@@ -451,7 +443,7 @@ function parseProductionSheet(rows, product, month) {
   const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
   for (const row of monthRows) {
-    const hasData = [stockIniCol, ...(pedidosSumCols || [pedidosCol]), ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index), ...stackedProductionColumns.map(({ index }) => index)]
+    const hasData = [stockIniCol, pedidosCol, ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index), ...stackedProductionColumns.map(({ index }) => index)]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
     if (!hasData && !day) continue;
@@ -461,7 +453,7 @@ function parseProductionSheet(rows, product, month) {
     dailyRows.push({
       ...day,
       stock_ini: number(row[stockIniCol]),
-      pedidos: pedidosSumCols ? pedidosSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[pedidosCol]),
+      pedidos: number(row[pedidosCol]),
       produccion: product.id === "07" ? (number(row[11]) * 1.6) + (number(row[23]) * 5) : produccionSumCols ? produccionSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[produccionCol]),
       ollas: number(row[ollasCol]),
       rendimiento: number(row[rendimientoCol]),
@@ -524,22 +516,17 @@ function parseProductionSheet(rows, product, month) {
   const sigma = std(rendimientos);
   const cv = rendimientoPromedio ? (sigma / rendimientoPromedio) * 100 : 0;
   const consistency = cv < 3 ? "alta consistencia" : cv < 8 ? "variación moderada" : "alta variabilidad";
-  const summary = columnOverride.hideRendimientoSection
-    ? `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
-      `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
-      `El mayor pedido fue ${format(topPedido.pedidos)} ${units.pedido} el ${topPedido.dia} ${topPedido.fecha}; ` +
-      `la mayor producción fue ${format(topProduccion.produccion)} ${units.produccion} el ${topProduccion.dia} ${topProduccion.fecha}.`
-    : `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
-      `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
-      `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} ${units.rendimiento} con ${consistency} ` +
-      `(CV ${cv.toFixed(1)}%). El mayor pedido fue ${format(topPedido.pedidos)} ${units.pedido} el ${topPedido.dia} ${topPedido.fecha}; ` +
-      `la mayor producción fue ${format(topProduccion.produccion)} ${units.produccion} el ${topProduccion.dia} ${topProduccion.fecha}.`;
 
   return {
     product,
     month,
     generatedAt: new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }),
-    summary,
+    summary:
+      `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
+      `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
+      `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} ${units.rendimiento} con ${consistency} ` +
+      `(CV ${cv.toFixed(1)}%). El mayor pedido fue ${format(topPedido.pedidos)} ${units.pedido} el ${topPedido.dia} ${topPedido.fecha}; ` +
+      `la mayor producción fue ${format(topProduccion.produccion)} ${units.produccion} el ${topProduccion.dia} ${topProduccion.fecha}.`,
     kpis: {
       totalPedidos,
       totalProduccion,
@@ -752,7 +739,7 @@ function stackedIngredientChart(chart) {
 
   return `
     <svg class="chart stacked-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${chart.title}">
-      <text x="${pad.left}" y="36" font-size="22" font-weight="800" fill="#526071">${chart.title}</text>
+      <text x="${pad.left}" y="36" font-size="22" font-weight="800" fill="#526071">${chart.title.toUpperCase()}</text>
       ${grid}
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#202938" stroke-width="1.5"></line>
       ${bars}
@@ -820,8 +807,8 @@ function lineChart(rows) {
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
       <rect x="${pad.left}" y="${bandTop}" width="${chartW}" height="${bandBottom - bandTop}" fill="#6255d9" opacity="0.08"></rect>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
-      <rect x="${width - pad.right - 280}" y="${pad.top - 38}" width="268" height="38" rx="9" fill="#ffffff" stroke="#cfd6e2" stroke-width="1.5"></rect>
-      <text x="${width - pad.right - 146}" y="${pad.top - 13}" text-anchor="middle" font-size="18" font-weight="900" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
+      <rect x="${width - pad.right - 180}" y="${pad.top - 30}" width="176" height="24" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
+      <text x="${width - pad.right - 92}" y="${pad.top - 13}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
       <path d="${path}" fill="none" stroke="#6255d9" stroke-width="3"></path>
       ${dots}
     </svg>`;
@@ -919,35 +906,25 @@ function monthlyTrendSection(report, config) {
 
 function monthlyTrendPanel(report) {
   if (!report.monthlyPedidos?.length) return "";
-  const configs = [
-    { key: "pedidos", title: "Fiebre mensual de pedidos en KG", unit: report.units.pedido, color: "#108a63" },
-  ];
-
-  if (report.kpis.extraPedidoTotals?.length) {
-    configs.push({
-      key: "pedidosChicas",
-      title: report.product.id === "05"
-        ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG"
-        : report.product.id === "06" || report.product.id === "07"
-        ? "Fiebre mensual de pedidos en Bolsas Chicas de 1.6 KG"
-        : "Fiebre mensual de pedidos en Bolsas Chicas",
-      unit: "bolsas",
-      color: "#d97706",
-    });
-    if (report.kpis.extraPedidoTotals.some((item) => item.key === "pedidos_grandes_2kg")) {
-      configs.push({
-        key: "pedidosGrandes",
-        title: report.product.id === "07"
-          ? "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG"
-          : report.product.id === "06"
-          ? "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG"
-          : "Fiebre mensual de pedidos en Bolsas Grandes",
-        unit: "bolsas",
-        color: "#7c3aed",
-      });
-    }
-  }
-
+  const base = { key: "pedidos", title: "Fiebre mensual de pedidos en KG", unit: report.units.pedido, color: "#108a63" };
+  const chica = {
+    key: "pedidosChicas",
+    title: report.product.id === "05" ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG" : "Fiebre mensual de pedidos en Bolsas Chicas de 1.6 KG",
+    unit: "bolsas",
+    color: "#d97706",
+  };
+  const grande = {
+    key: "pedidosGrandes",
+    title: report.product.id === "04" ? "Fiebre mensual de pedidos en Bolsas Grandes" : "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG",
+    unit: "bolsas",
+    color: "#7c3aed",
+  };
+  const hasChicas = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_chicas_1kg");
+  const hasGrandes = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_grandes_2kg");
+  const configs = report.product.id === "07" ? [] : [base];
+  if (hasChicas) configs.push(chica);
+  if (hasGrandes) configs.push(grande);
+  if (report.product.id === "07") configs.push(base);
   return configs.map((config) => monthlyTrendSection(report, config)).join("");
 }
 function renderTable(rows, columns, section) {
@@ -979,6 +956,7 @@ function selectedDayDetail(report, section) {
   const base = section === "pedidos" ? pedido : section === "rendimiento" ? rendimiento : produccion;
   if (!base) return "";
   const units = report.units || unitsFor(report.product);
+  const hideRendimiento = PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection;
 
   const cards = section === "pedidos"
     ? PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hidePedidoStockDetail || report.product.id === "05"
@@ -999,7 +977,7 @@ function selectedDayDetail(report, section) {
         ["Producción", `${format(rendimiento.produccion)} ${units.produccion}`],
         ["Ollas", format(rendimiento.ollas)],
       ]
-    : PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection
+    : hideRendimiento
     ? [
         ["Día", `${produccion.dia} ${produccion.fecha}`],
         ["Producción", `${format(produccion.produccion)} ${units.produccion}`],
@@ -1057,7 +1035,7 @@ function renderKpis(report) {
     const isEnsalada = report.product.id === "07";
     const hideRendimiento = PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection;
     const pedidoChicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito || isEnsalada ? "bolsas de 1.6 kg" : "bolsas chicas";
-    const pedidoGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "bolsas de 5 kg" : "bolsas grandes";
+    const pedidoGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito || isEnsalada ? "bolsas de 5 kg" : "bolsas grandes";
     const produccionChicaNote = isArroz ? "bolsas de 1 kg" : isMezcla ? "bolsas de 1.2 kg" : isCodito ? "bolsas de 1.6 kg" : isEnsalada ? "kits de 1.6 kg" : "bolsas chicas";
     const produccionGrandeNote = isArroz ? "bolsas de 2 kg" : isCodito ? "bolsas de 5 kg" : isEnsalada ? "kits de 5 kg" : "bolsas grandes";
     const pedidoCards = isEnsalada
@@ -1091,6 +1069,7 @@ function renderKpis(report) {
     renderKpiCard("Consistencia", format(report.kpis.cv, 1) + "%", "coeficiente de variación") +
   '</section>';
 }
+
 function reportView(report) {
   const visible = state.sections;
   return html`
@@ -1135,8 +1114,8 @@ function reportView(report) {
               ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: report.product.id === "06" || report.product.id === "07" ? "PEDIDOS KG" : "Pedidos en KG", format: (v) => format(v) },
-                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" || report.product.id === "07" ? "BOLSAS CHICAS (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
-                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "07" ? "BOLSAS GRANDES (5 KG)" : report.product.id === "06" ? "BOLSAS GRANDES (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
+                { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" || report.product.id === "07" ? "BOL. CH (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
+                ...(report.product.id === "05" ? [] : [{ key: "pedidos_grandes_2kg", label: report.product.id === "07" || report.product.id === "06" ? "BOL. GR (5 KG)" : "Pedidos en Bolsas Grandes (2 KG)", format: (v) => format(v) }]),
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
@@ -1160,8 +1139,8 @@ function reportView(report) {
               ${renderTable(report.produccion, PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
-                { key: "produccion_chicas_1kg", label: "Kits chicas (1.6 KG)", format: (v) => format(v) },
-                { key: "produccion_grandes_2kg", label: "Kits grandes (5 KG)", format: (v) => format(v) },
+                { key: "produccion_chicas_1kg", label: "KIT CH (1.6 KG)", format: (v) => format(v) },
+                { key: "produccion_grandes_2kg", label: "KIT GR (5 KG)", format: (v) => format(v) },
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
@@ -1205,7 +1184,7 @@ function emptyView() {
     <article class="report-card empty">
       <div class="empty-inner">
         <h2>${state.loading ? "Leyendo reporte..." : "Elige el reporte que necesitas"}</h2>
-        <p>Seleccionado: <strong>${productLabel}</strong> · <strong>${monthLabel}</strong>. Presiona Generar reporte para leer pedidos, producción y materias primas.</p>
+        <p>Seleccionado: <strong>${productLabel}</strong> · <strong>${monthLabel}</strong>. Marca pedidos, producción y/o materias primas, y presiona Generar reporte.</p>
         ${state.error ? `<p class="error-note">${state.error}</p>` : ""}
       </div>
     </article>`;
@@ -1213,7 +1192,8 @@ function emptyView() {
 
 function sidebarView() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
-  const canGenerate = Boolean(product && state.monthId);
+  const selectedSections = Object.values(state.sections).some(Boolean);
+  const canGenerate = Boolean(product && state.monthId && selectedSections);
   return `
     <aside class="sidebar">
       <div class="field">
@@ -1229,6 +1209,20 @@ function sidebarView() {
           <option value="">Elige una opción de mes</option>
           ${renderSelectOptions(MONTHS, state.monthId, (item) => `${item.id} · ${item.name}`)}
         </select>
+      </div>
+      <div class="field">
+        <span class="mini-label">Secciones</span>
+        <div class="section-options">
+          ${Object.entries(SECTIONS)
+            .map(
+              ([key, section]) => `
+              <label class="check-row">
+                <input type="checkbox" data-section="${key}" ${state.sections[key] ? "checked" : ""}>
+                <span>${section.label}</span>
+              </label>`,
+            )
+            .join("")}
+        </div>
       </div>
       <div class="actions">
         <button class="button" data-action="generate" ${state.loading || !canGenerate ? "disabled" : ""}>${state.loading ? "Leyendo..." : "Generar reporte"}</button>
@@ -1311,8 +1305,9 @@ function downloadReportPdf() {
 async function generateReport() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
   const month = MONTHS.find((item) => item.id === state.monthId);
-  if (!product || !month) {
-    state.error = "Selecciona producto y mes antes de generar el reporte.";
+  const selectedSections = Object.values(state.sections).some(Boolean);
+  if (!product || !month || !selectedSections) {
+    state.error = "Selecciona producto, mes y al menos una sección antes de generar el reporte.";
     render();
     return;
   }
@@ -1355,6 +1350,13 @@ function bindEvents() {
     state.error = "";
     render();
   });
+  document.querySelectorAll("[data-section]").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      state.sections[event.target.dataset.section] = event.target.checked;
+      state.error = "";
+      render();
+    });
+  });
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", async (event) => {
       const action = event.currentTarget.dataset.action;
@@ -1375,7 +1377,7 @@ function bindEvents() {
       }
     });
   });
-  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-chart-stacked], [data-table-row], [data-chart-month]").forEach((item) => {
+  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-table-row], [data-chart-month]").forEach((item) => {
     item.addEventListener("click", (event) => {
       const target = event.currentTarget;
       if (target.dataset.month) {
