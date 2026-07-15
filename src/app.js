@@ -211,7 +211,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
   },
   "08": {
     stockIniCol: -1,
-    pedidosCol: 3,
+    pedidosCol: 2,
     produccionCol: 10,
     ollasCol: -1,
     rendimientoCol: -1,
