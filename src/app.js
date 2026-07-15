@@ -1354,7 +1354,7 @@ function bindEvents() {
       }
     });
   });
-  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-table-row], [data-chart-month]").forEach((item) => {
+  document.querySelectorAll("[data-chart-bar], [data-chart-point], [data-chart-stacked], [data-table-row], [data-chart-month]").forEach((item) => {
     item.addEventListener("click", (event) => {
       const target = event.currentTarget;
       if (target.dataset.month) {
