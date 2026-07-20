@@ -889,7 +889,8 @@ function monthlyTrendChart(rows, key = "pedidos", color = "#108a63", unit = "ped
     const value = number(point[key]);
     return `
       <g class="chart-month${selected ? " is-selected" : ""}" data-chart-month="true" data-month="${point.id}" tabindex="0" role="button" aria-label="${point.name}: ${format(value)} ${unit}">
-        <circle cx="${point.x}" cy="${point.y}" r="${selected ? 7 : 5}" fill="${color}" stroke="#ffffff" stroke-width="2"></circle>
+        <circle class="chart-month-hit" cx="${point.x}" cy="${point.y}" r="16" fill="transparent"></circle>
+        <circle class="chart-month-dot" cx="${point.x}" cy="${point.y}" r="${selected ? 10 : 8}" fill="${color}" stroke="#ffffff" stroke-width="3"></circle>
         <title>${point.name}: ${format(value)} ${unit}</title>
         <text x="${point.x}" y="${height - 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#526071">${point.label}</text>
       </g>`;

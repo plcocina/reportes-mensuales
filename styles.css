@@ -724,15 +724,19 @@ tr:last-child td {
   outline: none;
 }
 
-.chart-month circle {
+.chart-month-dot {
   transition: r 0.16s ease, filter 0.16s ease, stroke-width 0.16s ease;
 }
 
-.chart-month:hover circle,
-.chart-month:focus circle,
-.chart-month.is-selected circle {
+.chart-month-hit {
+  pointer-events: all;
+}
+
+.chart-month:hover .chart-month-dot,
+.chart-month:focus .chart-month-dot,
+.chart-month.is-selected .chart-month-dot {
   filter: drop-shadow(0 6px 9px rgba(16, 138, 99, 0.28));
-  stroke-width: 3;
+  stroke-width: 4;
 }
 
 .chart-month-line {
