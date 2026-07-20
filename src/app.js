@@ -220,6 +220,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
     hideRendimientoSection: true,
     hideMateriasSection: true,
     oilColumns: {
+      pedidosSucursal: 3,
       pedidosPl3: 4,
       equivalenciaLitros: 5,
       arrozLt: 7,
@@ -230,7 +231,6 @@ const PRODUCT_COLUMN_OVERRIDES = {
     },
   },
 };
-
 function unitsFor(product) {
   return PRODUCT_UNITS[product?.id] || { pedido: "unidades", produccion: "unidades", stock: "unidades", rendimiento: "prod." };
 }
@@ -480,6 +480,7 @@ function parseProductionSheet(rows, product, month) {
       ollas: number(row[ollasCol]),
       rendimiento: number(row[rendimientoCol]),
       stock_final: number(row[stockFinalCol]),
+      pedidos_sucursal: oilColumns ? number(row[oilColumns.pedidosSucursal]) : 0,
       pedidos_pl3: oilColumns ? number(row[oilColumns.pedidosPl3]) : 0,
       equivalencia_litros: oilColumns ? number(row[oilColumns.equivalenciaLitros]) : 0,
       consumo_arroz_lt: oilColumns ? number(row[oilColumns.arrozLt]) : 0,
@@ -526,6 +527,8 @@ function parseProductionSheet(rows, product, month) {
   }));
   const oilTotals = oilColumns ? {
     pedidosBidones: totalPedidos,
+    pedidosSucursal: sum(dailyRows, "pedidos_sucursal"),
+    pedidosFiebre: totalPedidos + sum(dailyRows, "pedidos_sucursal"),
     pedidosPl3: sum(dailyRows, "pedidos_pl3"),
     equivalenciaLitros: sum(dailyRows, "equivalencia_litros"),
     arrozLt: sum(dailyRows, "consumo_arroz_lt"),
@@ -590,6 +593,7 @@ function parseProductionSheet(rows, product, month) {
       pedidos: row.pedidos,
       stock_ini: row.stock_ini,
       stock_final: row.stock_final,
+      pedidos_sucursal: row.pedidos_sucursal,
       pedidos_pl3: row.pedidos_pl3,
       equivalencia_litros: row.equivalencia_litros,
       ...Object.fromEntries(extraPedidoColumns.map(({ key }) => [key, row[key]])),
@@ -733,6 +737,7 @@ function barChart(rows, key, color, average, section) {
     </svg>`;
 }
 
+
 function stackedIngredientChart(chart) {
   const rows = chart.rows || [];
   const columns = chart.columns || [];
@@ -855,8 +860,8 @@ function lineChart(rows) {
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
       <rect x="${pad.left}" y="${bandTop}" width="${chartW}" height="${bandBottom - bandTop}" fill="#6255d9" opacity="0.08"></rect>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
-      <rect x="${width - pad.right - 180}" y="${pad.top - 30}" width="176" height="24" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
-      <text x="${width - pad.right - 92}" y="${pad.top - 13}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
+      <rect x="${width - pad.right - 250}" y="${pad.top - 36}" width="246" height="34" rx="8" fill="#ffffff" stroke="#cfd6e2"></rect>
+      <text x="${width - pad.right - 127}" y="${pad.top - 13}" text-anchor="middle" font-size="17" font-weight="900" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
       <path d="${path}" fill="none" stroke="#6255d9" stroke-width="3"></path>
       ${dots}
     </svg>`;
@@ -967,12 +972,14 @@ function monthlyTrendPanel(report) {
     unit: "bolsas",
     color: "#7c3aed",
   };
+  const aceitePl3 = { key: "pedidosPl3", title: "Fiebre mensual de Bidones hacia PL3", unit: "bidones", color: "#2563eb" };
   const hasChicas = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_chicas_1kg");
   const hasGrandes = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_grandes_2kg");
   const configs = report.product.id === "07" ? [] : [base];
   if (hasChicas) configs.push(chica);
   if (hasGrandes) configs.push(grande);
   if (report.product.id === "07") configs.push(base);
+  if (report.product.id === "08") configs.push(aceitePl3);
   return configs.map((config) => monthlyTrendSection(report, config)).join("");
 }
 function renderTable(rows, columns, section) {
@@ -1011,6 +1018,7 @@ function selectedDayDetail(report, section) {
       ? [
           ["Día", `${pedido.dia} ${pedido.fecha}`],
           ["Bidones", `${format(pedido.pedidos)} bidones`],
+          ["Sucursal", `${format(pedido.pedidos_sucursal)} bidones`],
           ["Bidones PL3", `${format(pedido.pedidos_pl3)} bidones`],
           ["Equivalencia", `${format(pedido.equivalencia_litros, 1)} lt`],
         ]
@@ -1062,7 +1070,6 @@ function selectedDayDetail(report, section) {
         </div>`).join("")}
     </div>`;
 }
-
 function selectedExtraPedidoDetail(chart) {
   if (state.selectedDay?.section !== chart.key) return "";
   const row = chart.rows.find((item) => item.fecha === state.selectedDay.fecha);
@@ -1201,6 +1208,7 @@ function reportView(report) {
               ] : report.product.id === "08" ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: "Bidones", format: (v) => format(v) },
+                { key: "pedidos_sucursal", label: "Sucursal", format: (v) => format(v) },
                 { key: "pedidos_pl3", label: "Bidones PL3", format: (v) => format(v) },
                 { key: "equivalencia_litros", label: "Equiv. LT", format: (v) => format(v, 1) },
               ] : [
@@ -1268,7 +1276,6 @@ function reportView(report) {
       </div>
     </article>`;
 }
-
 function emptyView() {
   const product = PRODUCTS.find((item) => item.id === state.productId);
   const month = MONTHS.find((item) => item.id === state.monthId);
@@ -1310,7 +1317,6 @@ function sidebarView() {
       <p class="helper">${product ? `Archivo activo: <strong>${product.file}</strong>. ` : "Selecciona un producto para ver el archivo activo. "}La app lee la pestaña elegida desde Google Sheets publicado; no necesita servidor ni backend.</p>
     </aside>`;
 }
-
 function appView() {
   return `
     <div class="shell ${state.sidebarCollapsed ? "is-sidebar-collapsed" : ""}">
@@ -1354,9 +1360,10 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         id: month.id,
         name: month.name,
         label: month.id,
-        pedidos: monthReport.kpis.totalPedidos,
+        pedidos: product.id === "08" ? (monthReport.kpis.oilTotals?.pedidosFiebre || 0) : monthReport.kpis.totalPedidos,
         pedidosChicas: monthReport.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_chicas_1kg")?.total || 0,
         pedidosGrandes: monthReport.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_grandes_2kg")?.total || 0,
+        pedidosPl3: monthReport.kpis.oilTotals?.pedidosPl3 || 0,
       };
     } catch {
       return {
@@ -1366,6 +1373,7 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         pedidos: 0,
         pedidosChicas: 0,
         pedidosGrandes: 0,
+        pedidosPl3: 0,
       };
     }
   }));

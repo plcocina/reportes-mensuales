@@ -316,6 +316,37 @@ button {
   margin-bottom: 0;
 }
 
+
+.kpis-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kpis-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stacked-detail {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr);
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.stacked-detail-ingredients {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stacked-detail-card small {
+  display: block;
+  margin-top: 8px;
+  color: #69778a;
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
 .kpis-three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -444,32 +475,6 @@ button {
   margin-top: 4px;
   color: #172033;
   font-size: 18px;
-}
-
-.stacked-detail {
-  display: grid;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.stacked-detail-day {
-  max-width: 360px;
-}
-
-.stacked-detail-ingredients {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.stacked-detail-card small {
-  display: block;
-  margin-top: 4px;
-  color: #69778a;
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: lowercase;
 }
 
 .table-wrap {
