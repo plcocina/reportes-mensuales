@@ -461,10 +461,10 @@ function parseProductionSheet(rows, product, month) {
   const oilColumns = columnOverride.oilColumns || null;
   const oilValueColumns = oilColumns ? Object.values(oilColumns) : [];
   const dessertColumns = columnOverride.dessertColumns || null;
-  const dessertValueColumns = dessertColumns ? [pedidosCol, dessertColumns.pedidosSucursal, dessertColumns.pedidosPlog, dessertColumns.produccionPiezas, dessertColumns.moldes] : [];
   const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = columnOverride.pedidosCol ?? findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = columnOverride.produccionCol ?? findMetricColumn(headers, ["produccion"], ["control"], 4);
+  const dessertValueColumns = dessertColumns ? [pedidosCol, dessertColumns.pedidosSucursal, dessertColumns.pedidosPlog, dessertColumns.produccionPiezas, dessertColumns.moldes] : [];
   const produccionSumCols = columnOverride.produccionSumCols || null;
   const ollasCol = columnOverride.ollasCol ?? findColumn(headers, (h) => h.includes("ollas"), 5);
   const rendimientoCol = columnOverride.rendimientoCol ?? findHeaderByWords(rows, ["rendimiento"], [], findColumn(headers, (h) => h.includes("rendimiento"), 7), "first");
