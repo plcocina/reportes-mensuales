@@ -239,7 +239,28 @@ const PRODUCT_COLUMN_OVERRIDES = {
     stockFinalCol: -1,
     hidePedidoStockDetail: true,
     hideRendimientoSection: true,
-    dessertColumns: { pedidosSucursal: 3, pedidosPlog: 4, produccionPiezas: 6, moldes: 7, materiaStart: 11, materiaEnd: 22 },
+    dessertColumns: {
+      pedidosSucursal: 3,
+      pedidosPlog: 4,
+      produccionPiezas: 6,
+      moldes: 7,
+      materiaStart: 11,
+      materiaEnd: 22,
+      materiaLabels: [
+        "Galletas M. (Tubo)",
+        "Margarina (Pieza)",
+        "Queso Crema (KG)",
+        "Leche condensada (KG)",
+        "Leche evaporada (KG)",
+        "Agua (LT)",
+        "Huevos (LT)",
+        "Fresas (Caja)",
+        "Fresas (equivalencia en KG)",
+        "Glase (Bolsa 1KG)",
+        "Chantillí (KG)",
+        "Domo (PZA)",
+      ],
+    },
   },
   "10": {
     stockIniCol: -1,
@@ -503,7 +524,8 @@ function parseProductionSheet(rows, product, month) {
     : dessertColumns
       ? Array.from({ length: dessertColumns.materiaEnd - dessertColumns.materiaStart + 1 }, (_, offset) => {
           const index = dessertColumns.materiaStart + offset;
-          const label = ingredientLabelFromTopRows(rows, index, `Insumo ${offset + 1}`);
+          const label = dessertColumns.materiaLabels?.[offset]
+            || ingredientLabelFromTopRows(rows, index, `Insumo ${offset + 1}`);
           return { label, index };
         })
       : columnOverride.materiaColumns?.map((column) => typeof column === "number" ? ({ label: headers[column], index: column }) : column) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
