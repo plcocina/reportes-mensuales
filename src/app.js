@@ -420,6 +420,24 @@ function findHeaderByWords(rows, requiredWords, excludedWords = [], fallback = -
   return prefer === "last" ? Math.max(...matches) : Math.min(...matches);
 }
 
+function isUsefulIngredientLabel(value) {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  const clean = cleanText(text);
+  if (!text || !/[a-záéíóúñ]/i.test(text)) return false;
+  if (/materia prima|total|promedio|fecha|dia|día|pedidos|produccion|producción|stock/.test(clean)) return false;
+  return true;
+}
+
+function ingredientLabelFromTopRows(rows, index, fallback) {
+  const candidates = [];
+  if (Array.isArray(rows.__columns)) candidates.push(rows.__columns);
+  rows.slice(0, 8).forEach((row) => candidates.push(row || []));
+  const found = candidates
+    .map((row) => row[index])
+    .find((value) => isUsefulIngredientLabel(value));
+  return String(found || fallback).replace(/\s+/g, " ").trim();
+}
+
 function findGroupStart(rows, groupName) {
   const group = cleanText(groupName);
   for (const row of rows.slice(0, 6)) {
@@ -485,7 +503,7 @@ function parseProductionSheet(rows, product, month) {
     : dessertColumns
       ? Array.from({ length: dessertColumns.materiaEnd - dessertColumns.materiaStart + 1 }, (_, offset) => {
           const index = dessertColumns.materiaStart + offset;
-          const label = rows[2]?.[index] || headers[index] || `Insumo ${offset + 1}`;
+          const label = ingredientLabelFromTopRows(rows, index, `Insumo ${offset + 1}`);
           return { label, index };
         })
       : columnOverride.materiaColumns?.map((column) => typeof column === "number" ? ({ label: headers[column], index: column }) : column) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
