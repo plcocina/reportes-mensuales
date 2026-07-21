@@ -505,7 +505,8 @@ function parseProductionSheet(rows, product, month) {
   const firstDayIndex = rows.findIndex((row) => splitDay(row?.[0], null));
   const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
-  for (const row of monthRows) {
+  for (const rawRow of monthRows) {
+    const row = rawRow || [];
     const hasData = [stockIniCol, pedidosCol, ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index), ...stackedProductionColumns.map(({ index }) => index), ...oilValueColumns, ...dessertValueColumns]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
@@ -1499,14 +1500,21 @@ async function generateReport() {
   try {
     const rows = await fetchPublishedSheetRows(product, month);
     const report = parseProductionSheet(rows, product, month);
-    report.monthlyPedidos = await fetchMonthlyPedidosTrend(product, month, report);
+    try {
+      report.monthlyPedidos = await fetchMonthlyPedidosTrend(product, month, report);
+    } catch (trendError) {
+      console.warn(trendError);
+      report.monthlyPedidos = [];
+    }
     state.report = report;
     state.selectedDay = null;
     state.selectedTrendMonth = month.id;
     setToast("Reporte leído desde Google Sheets.");
-  } catch {
+  } catch (error) {
     state.error =
-      "No pude leer ese Sheet desde GitHub Pages. Revisa que el archivo esté publicado o compartido para lectura por enlace, y que exista la pestaña seleccionada.";
+      "No pude leer ese Sheet desde GitHub Pages. Detalle: " +
+      (error?.message || "revisa que el archivo esté publicado o compartido para lectura por enlace, y que exista la pestaña seleccionada.");
+    console.error(error);
   }
   state.loading = false;
   render();
