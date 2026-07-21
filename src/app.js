@@ -889,10 +889,11 @@ function monthlyTrendChart(rows, key = "pedidos", color = "#108a63", unit = "ped
     const value = number(point[key]);
     return `
       <g class="chart-month${selected ? " is-selected" : ""}" data-chart-month="true" data-month="${point.id}" tabindex="0" role="button" aria-label="${point.name}: ${format(value)} ${unit}">
-        <circle class="chart-month-hit" cx="${point.x}" cy="${point.y}" r="16" fill="transparent"></circle>
-        <circle class="chart-month-dot" cx="${point.x}" cy="${point.y}" r="${selected ? 10 : 8}" fill="${color}" stroke="#ffffff" stroke-width="3"></circle>
+        <circle class="chart-month-hit" cx="${point.x}" cy="${point.y}" r="20" fill="transparent"></circle>
+        <circle class="chart-month-ring" cx="${point.x}" cy="${point.y}" r="14" fill="none" stroke="${color}" stroke-width="0"></circle>
+        <circle class="chart-month-dot" cx="${point.x}" cy="${point.y}" r="${selected ? 11 : 8}" fill="${color}" stroke="#ffffff" stroke-width="3"></circle>
         <title>${point.name}: ${format(value)} ${unit}</title>
-        <text x="${point.x}" y="${height - 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#526071">${point.label}</text>
+        <text class="chart-month-label" x="${point.x}" y="${height - 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#526071">${point.label}</text>
       </g>`;
   }).join("");
 

@@ -724,8 +724,10 @@ tr:last-child td {
   outline: none;
 }
 
-.chart-month-dot {
-  transition: r 0.16s ease, filter 0.16s ease, stroke-width 0.16s ease;
+.chart-month-dot,
+.chart-month-ring,
+.chart-month-label {
+  transition: r 0.16s ease, filter 0.16s ease, stroke-width 0.16s ease, stroke-opacity 0.16s ease, fill 0.16s ease;
 }
 
 .chart-month-hit {
@@ -733,10 +735,25 @@ tr:last-child td {
 }
 
 .chart-month:hover .chart-month-dot,
-.chart-month:focus .chart-month-dot,
-.chart-month.is-selected .chart-month-dot {
+.chart-month:focus .chart-month-dot {
   filter: drop-shadow(0 6px 9px rgba(16, 138, 99, 0.28));
   stroke-width: 4;
+}
+
+.chart-month.is-selected .chart-month-ring {
+  stroke-width: 6;
+  stroke-opacity: 0.24;
+  filter: drop-shadow(0 8px 14px rgba(37, 99, 235, 0.24));
+}
+
+.chart-month.is-selected .chart-month-dot {
+  filter: drop-shadow(0 8px 14px rgba(37, 99, 235, 0.34));
+  stroke-width: 5;
+}
+
+.chart-month.is-selected .chart-month-label {
+  fill: #111827;
+  font-weight: 950;
 }
 
 .chart-month-line {
