@@ -230,6 +230,39 @@ const PRODUCT_COLUMN_OVERRIDES = {
       totalKg: 11,
     },
   },
+  "09": {
+    stockIniCol: -1,
+    pedidosCol: 2,
+    produccionCol: 6,
+    ollasCol: 7,
+    rendimientoCol: -1,
+    stockFinalCol: -1,
+    hidePedidoStockDetail: true,
+    hideRendimientoSection: true,
+    dessertColumns: { pedidosSucursal: 3, pedidosPlog: 4, produccionPiezas: 6, moldes: 7, materiaStart: 11, materiaEnd: 22 },
+  },
+  "10": {
+    stockIniCol: -1,
+    pedidosCol: 2,
+    produccionCol: 6,
+    ollasCol: 7,
+    rendimientoCol: -1,
+    stockFinalCol: -1,
+    hidePedidoStockDetail: true,
+    hideRendimientoSection: true,
+    dessertColumns: { pedidosSucursal: 3, pedidosPlog: 4, produccionPiezas: 6, moldes: 7, materiaStart: 11, materiaEnd: 18 },
+  },
+  "11": {
+    stockIniCol: -1,
+    pedidosCol: 2,
+    produccionCol: 6,
+    ollasCol: 7,
+    rendimientoCol: -1,
+    stockFinalCol: -1,
+    hidePedidoStockDetail: true,
+    hideRendimientoSection: true,
+    dessertColumns: { pedidosSucursal: 3, pedidosPlog: 4, produccionPiezas: 6, moldes: 7, materiaStart: 11, materiaEnd: 16 },
+  },
 };
 function unitsFor(product) {
   return PRODUCT_UNITS[product?.id] || { pedido: "unidades", produccion: "unidades", stock: "unidades", rendimiento: "prod." };
@@ -427,6 +460,8 @@ function parseProductionSheet(rows, product, month) {
   const stackedProductionColumns = stackedProductionConfig.flatMap((chart) => chart.columns || []);
   const oilColumns = columnOverride.oilColumns || null;
   const oilValueColumns = oilColumns ? Object.values(oilColumns) : [];
+  const dessertColumns = columnOverride.dessertColumns || null;
+  const dessertValueColumns = dessertColumns ? [pedidosCol, dessertColumns.pedidosSucursal, dessertColumns.pedidosPlog, dessertColumns.produccionPiezas, dessertColumns.moldes] : [];
   const stockIniCol = columnOverride.stockIniCol ?? findHeaderByWords(rows, ["stock", "ini"], ["pedidos"], 1, "first");
   const pedidosCol = columnOverride.pedidosCol ?? findMetricColumn(headers, ["pedidos"], ["stock ini", "avg"], 2);
   const produccionCol = columnOverride.produccionCol ?? findMetricColumn(headers, ["produccion"], ["control"], 4);
@@ -447,7 +482,13 @@ function parseProductionSheet(rows, product, month) {
   ];
   let materiaColumns = product.id === "01"
     ? molcaMateriaLabels.map((label, offset) => ({ label, index: 12 + offset }))
-    : columnOverride.materiaColumns?.map((column) => typeof column === "number" ? ({ label: headers[column], index: column }) : column) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
+    : dessertColumns
+      ? Array.from({ length: dessertColumns.materiaEnd - dessertColumns.materiaStart + 1 }, (_, offset) => {
+          const index = dessertColumns.materiaStart + offset;
+          const label = rows[2]?.[index] || headers[index] || `Insumo ${offset + 1}`;
+          return { label, index };
+        })
+      : columnOverride.materiaColumns?.map((column) => typeof column === "number" ? ({ label: headers[column], index: column }) : column) || findGroupedColumns(headers, sectionRow, "MATERIA PRIMA");
   if (!materiaColumns.length) {
     const materiaStart = findGroupStart(rows, "MATERIA PRIMA");
     const nextGroup = materiaStart >= 0
@@ -465,7 +506,7 @@ function parseProductionSheet(rows, product, month) {
   const monthRows = firstDayIndex >= 0 ? rows.slice(firstDayIndex, firstDayIndex + 31) : rows.slice(3, 34);
 
   for (const row of monthRows) {
-    const hasData = [stockIniCol, pedidosCol, ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index), ...stackedProductionColumns.map(({ index }) => index), ...oilValueColumns]
+    const hasData = [stockIniCol, pedidosCol, ...(produccionSumCols || [produccionCol]), ollasCol, rendimientoCol, stockFinalCol, ...extraPedidoColumns.map(({ index }) => index), ...extraProduccionColumns.map(({ index }) => index), ...stackedProductionColumns.map(({ index }) => index), ...oilValueColumns, ...dessertValueColumns]
       .some((index) => row[index] !== undefined && row[index] !== "");
     const day = splitDay(row[0], fallbackDay);
     if (!hasData && !day) continue;
@@ -475,12 +516,13 @@ function parseProductionSheet(rows, product, month) {
     dailyRows.push({
       ...day,
       stock_ini: number(row[stockIniCol]),
-      pedidos: number(row[pedidosCol]),
-      produccion: product.id === "08" && oilColumns ? number(row[oilColumns.totalLt]) : product.id === "07" ? (number(row[11]) * 1.6) + (number(row[23]) * 5) : produccionSumCols ? produccionSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[produccionCol]),
-      ollas: number(row[ollasCol]),
+      pedidos: dessertColumns ? number(row[pedidosCol]) + number(row[dessertColumns.pedidosSucursal]) : number(row[pedidosCol]),
+      produccion: dessertColumns ? number(row[dessertColumns.produccionPiezas]) : product.id === "08" && oilColumns ? number(row[oilColumns.totalLt]) : product.id === "07" ? (number(row[11]) * 1.6) + (number(row[23]) * 5) : produccionSumCols ? produccionSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[produccionCol]),
+      ollas: dessertColumns ? number(row[dessertColumns.moldes]) : number(row[ollasCol]),
       rendimiento: number(row[rendimientoCol]),
       stock_final: number(row[stockFinalCol]),
-      pedidos_sucursal: oilColumns ? number(row[oilColumns.pedidosSucursal]) : 0,
+      pedidos_sucursal: dessertColumns ? number(row[dessertColumns.pedidosSucursal]) : oilColumns ? number(row[oilColumns.pedidosSucursal]) : 0,
+      pedidos_plog: dessertColumns ? number(row[dessertColumns.pedidosPlog]) : 0,
       pedidos_pl3: oilColumns ? number(row[oilColumns.pedidosPl3]) : 0,
       equivalencia_litros: oilColumns ? number(row[oilColumns.equivalenciaLitros]) : 0,
       consumo_arroz_lt: oilColumns ? number(row[oilColumns.arrozLt]) : 0,
@@ -537,6 +579,14 @@ function parseProductionSheet(rows, product, month) {
     totalLt: sum(dailyRows, "total_consumido_lt"),
     totalKg: sum(dailyRows, "total_consumido_kg"),
   } : null;
+  const dessertTotals = dessertColumns ? {
+    pedidosNegocio: totalPedidos - sum(dailyRows, "pedidos_sucursal"),
+    pedidosSucursal: sum(dailyRows, "pedidos_sucursal"),
+    pedidosTotales: totalPedidos,
+    pedidosPlog: sum(dailyRows, "pedidos_plog"),
+    produccionPiezas: totalProduccion,
+    moldes: totalOllas,
+  } : null;
 
   const extraPedidoCharts = extraPedidoColumns.map(({ key, label, color }) => ({
     key,
@@ -565,6 +615,8 @@ function parseProductionSheet(rows, product, month) {
     generatedAt: new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }),
     summary: product.id === "08" && oilTotals
       ? `${product.name} en ${month.name}: ${format(oilTotals.pedidosBidones)} bidones pedidos, ${format(oilTotals.pedidosPl3)} bidones a PL3 y ${format(oilTotals.totalLt, 1)} litros consumidos en total.`
+      : dessertTotals
+      ? `${product.name} en ${month.name}: ${format(dessertTotals.pedidosTotales)} piezas pedidas, ${format(dessertTotals.pedidosPlog)} piezas para PLOG y ${format(dessertTotals.produccionPiezas)} piezas producidas.`
       : `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
       `${totalProduccion.toLocaleString("es-MX")} ${units.produccion} producidos. ` +
       `El rendimiento promedio fue ${rendimientoPromedio.toFixed(2)} ${units.rendimiento} con ${consistency} ` +
@@ -586,6 +638,7 @@ function parseProductionSheet(rows, product, month) {
       highRendimiento,
       lowRendimiento,
       oilTotals,
+      dessertTotals,
     },
     pedidos: dailyRows.map((row) => ({
       dia: row.dia,
@@ -594,6 +647,7 @@ function parseProductionSheet(rows, product, month) {
       stock_ini: row.stock_ini,
       stock_final: row.stock_final,
       pedidos_sucursal: row.pedidos_sucursal,
+      pedidos_plog: row.pedidos_plog,
       pedidos_pl3: row.pedidos_pl3,
       equivalencia_litros: row.equivalencia_litros,
       ...Object.fromEntries(extraPedidoColumns.map(({ key }) => [key, row[key]])),
@@ -975,6 +1029,7 @@ function monthlyTrendPanel(report) {
     color: "#7c3aed",
   };
   const aceitePl3 = { key: "pedidosPl3", title: "Fiebre mensual de Bidones hacia PL3", unit: "bidones", color: "#2563eb" };
+  const postrePlog = { key: "pedidosPlog", title: "Fiebre mensual de pedidos PLOG", unit: "piezas", color: "#2563eb" };
   const hasChicas = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_chicas_1kg");
   const hasGrandes = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_grandes_2kg");
   const configs = report.product.id === "07" ? [] : [base];
@@ -982,6 +1037,7 @@ function monthlyTrendPanel(report) {
   if (hasGrandes) configs.push(grande);
   if (report.product.id === "07") configs.push(base);
   if (report.product.id === "08") configs.push(aceitePl3);
+  if (report.kpis.dessertTotals) configs.push(postrePlog);
   return configs.map((config) => monthlyTrendSection(report, config)).join("");
 }
 function renderTable(rows, columns, section) {
@@ -1024,6 +1080,12 @@ function selectedDayDetail(report, section) {
           ["Bidones PL3", `${format(pedido.pedidos_pl3)} bidones`],
           ["Equivalencia", `${format(pedido.equivalencia_litros, 1)} lt`],
         ]
+      : report.kpis.dessertTotals
+      ? [
+          ["Día", `${pedido.dia} ${pedido.fecha}`],
+          ["Pedidos totales", `${format(pedido.pedidos)} piezas`],
+          ["PLOG", `${format(pedido.pedidos_plog)} piezas`],
+        ]
       : PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hidePedidoStockDetail || report.product.id === "05"
       ? [
           ["Día", `${pedido.dia} ${pedido.fecha}`],
@@ -1050,6 +1112,12 @@ function selectedDayDetail(report, section) {
         ["Salsa Verde", `${format(produccion.consumo_salsa_verde_lt, 1)} lt`],
         ["Total LT", `${format(produccion.total_consumido_lt, 1)} lt`],
         ["Total KG", `${format(produccion.total_consumido_kg, 1)} kg`],
+      ]
+    : report.kpis.dessertTotals
+    ? [
+        ["Día", `${produccion.dia} ${produccion.fecha}`],
+        ["Producción", `${format(produccion.produccion)} piezas`],
+        ["Moldes", format(produccion.ollas)],
       ]
     : hideRendimiento
     ? [
@@ -1111,6 +1179,20 @@ function renderKpis(report) {
         renderKpiCard("Salsa Verde", format(oil.salsaVerdeLt, 1), "lt") +
         renderKpiCard("Total consumido LT", format(oil.totalLt, 1), "lt") +
         renderKpiCard("Total consumido KG", format(oil.totalKg, 1), "kg") +
+      '</div></div>' +
+    '</section>';
+  }
+
+  if (report.kpis.dessertTotals) {
+    const postre = report.kpis.dessertTotals;
+    return '<section class="kpi-section">' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="kpis kpis-two">' +
+        renderKpiCard("Pedidos totales", format(postre.pedidosTotales), "piezas") +
+        renderKpiCard("Pedidos de PLOG", format(postre.pedidosPlog), "piezas") +
+      '</div></div>' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-two">' +
+        renderKpiCard("Piezas", format(postre.produccionPiezas), "endomados") +
+        renderKpiCard("Moldes", format(postre.moldes), "8 piezas por molde") +
       '</div></div>' +
     '</section>';
   }
@@ -1190,7 +1272,7 @@ function reportView(report) {
                 ${selectedDayDetail(report, "pedidos")}
               </section>` : `
               <section class="panel">
-                <h3 class="panel-title">${report.product.id === "08" ? "Pedidos de Bidones" : "Pedidos por día en KG"}</h3>
+                <h3 class="panel-title">${report.product.id === "08" ? "Pedidos de Bidones" : report.kpis.dessertTotals ? "Pedidos por día en piezas" : "Pedidos por día en KG"}</h3>
                 ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
                 ${selectedDayDetail(report, "pedidos")}
               </section>
@@ -1213,6 +1295,10 @@ function reportView(report) {
                 { key: "pedidos_sucursal", label: "Sucursal", format: (v) => format(v) },
                 { key: "pedidos_pl3", label: "Bidones PL3", format: (v) => format(v) },
                 { key: "equivalencia_litros", label: "Equiv. LT", format: (v) => format(v, 1) },
+              ] : report.kpis.dessertTotals ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "pedidos", label: "Pedidos totales", format: (v) => format(v) },
+                { key: "pedidos_plog", label: "PLOG", format: (v) => format(v) },
               ] : [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: `Pedidos (${report.units.pedido})`, format: (v) => format(v) },
@@ -1227,7 +1313,7 @@ function reportView(report) {
               ${selectedStackedIngredientDetail(chart)}
             </section>`).join("") : `
             <section class="panel">
-              <h3 class="panel-title">${report.product.id === "08" ? "Consumo interno por día en LT" : "Producción por día"}</h3>
+              <h3 class="panel-title">${report.product.id === "08" ? "Consumo interno por día en LT" : report.kpis.dessertTotals ? "Producción por día en piezas" : "Producción por día"}</h3>
               ${barChart(report.produccion, "produccion", SECTIONS.produccion.color, report.kpis.promedioProduccion, "produccion")}
               ${selectedDayDetail(report, "produccion")}
             </section>`}
@@ -1240,6 +1326,10 @@ function reportView(report) {
                 { key: "consumo_salsa_verde_lt", label: "Salsa Verde (LT)", format: (v) => format(v, 1) },
                 { key: "total_consumido_lt", label: "Total LT", format: (v) => format(v, 1) },
                 { key: "total_consumido_kg", label: "Total KG", format: (v) => format(v, 1) },
+              ] : report.kpis.dessertTotals ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "produccion", label: "Producción (piezas)", format: (v) => format(v) },
+                { key: "ollas", label: "Moldes", format: (v) => format(v) },
               ] : PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
@@ -1366,6 +1456,7 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         pedidosChicas: monthReport.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_chicas_1kg")?.total || 0,
         pedidosGrandes: monthReport.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_grandes_2kg")?.total || 0,
         pedidosPl3: monthReport.kpis.oilTotals?.pedidosPl3 || 0,
+        pedidosPlog: monthReport.kpis.dessertTotals?.pedidosPlog || 0,
       };
     } catch {
       return {
@@ -1376,6 +1467,7 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         pedidosChicas: 0,
         pedidosGrandes: 0,
         pedidosPl3: 0,
+        pedidosPlog: 0,
       };
     }
   }));
