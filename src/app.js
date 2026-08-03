@@ -705,6 +705,10 @@ function parseProductionSheet(rows, product, month) {
     generatedAt: new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }),
     summary: product.id === "08" && oilTotals
       ? `${product.name} en ${month.name}: ${format(oilTotals.pedidosBidones)} bidones pedidos, ${format(oilTotals.pedidosPl3)} bidones a PL3 y ${format(oilTotals.totalLt, 1)} litros consumidos en total.`
+      : product.id === "12"
+      ? `${product.name} en ${month.name}: ${format(totalPedidos)} cajas pedidas y ${format(totalProduccion)} cajas producidas. ` +
+        `El mayor pedido fue ${format(topPedido.pedidos)} cajas el ${topPedido.dia} ${topPedido.fecha}; ` +
+        `la mayor producción fue ${format(topProduccion.produccion)} cajas el ${topProduccion.dia} ${topProduccion.fecha}.`
       : dessertTotals
       ? `${product.name} en ${month.name}: ${format(dessertTotals.pedidosTotales)} piezas pedidas, ${format(dessertTotals.pedidosPlog)} piezas para PLOG y ${format(dessertTotals.produccionPiezas)} piezas producidas.`
       : `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
@@ -1388,7 +1392,7 @@ function reportView(report) {
                 ${selectedDayDetail(report, "pedidos")}
               </section>` : `
               <section class="panel">
-                <h3 class="panel-title">${report.product.id === "08" ? "Pedidos de Bidones" : report.kpis.dessertTotals ? "Pedidos por día en piezas" : "Pedidos por día en KG"}</h3>
+                <h3 class="panel-title">${report.product.id === "08" ? "Pedidos de Bidones" : report.product.id === "12" ? "Pedidos por día en CAJAS" : report.kpis.dessertTotals ? "Pedidos por día en piezas" : "Pedidos por día en KG"}</h3>
                 ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
                 ${selectedDayDetail(report, "pedidos")}
               </section>
