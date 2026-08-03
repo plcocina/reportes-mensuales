@@ -1088,7 +1088,16 @@ function monthlyTrendSection(report, config) {
 
 function monthlyTrendPanel(report) {
   if (!report.monthlyPedidos?.length) return "";
-  const base = { key: "pedidos", title: report.product.id === "08" ? "Fiebre mensual de pedidos de Bidones" : "Fiebre mensual de pedidos en KG", unit: report.units.pedido, color: "#108a63" };
+  const base = {
+    key: "pedidos",
+    title: report.kpis.dessertTotals
+      ? "Fiebre Mensual de Pedidos en Piezas"
+      : report.product.id === "08"
+        ? "Fiebre mensual de pedidos de Bidones"
+        : "Fiebre mensual de pedidos en KG",
+    unit: report.units.pedido,
+    color: "#108a63",
+  };
   const chica = {
     key: "pedidosChicas",
     title: report.product.id === "05" ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG" : "Fiebre mensual de pedidos en Bolsas Chicas de 1.6 KG",
