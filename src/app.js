@@ -316,6 +316,23 @@ const PRODUCT_COLUMN_OVERRIDES = {
       ],
     },
   },
+  "12": {
+    stockIniCol: -1,
+    pedidosCol: 2,
+    produccionCol: 12,
+    ollasCol: -1,
+    rendimientoCol: -1,
+    stockFinalCol: -1,
+    hidePedidoStockDetail: true,
+    hideRendimientoSection: true,
+    extraPedidoColumns: [
+      { key: "pedidos_granel", label: "Pedidos en cajas de Granel", index: 4, color: "#7c3aed" },
+    ],
+    extraProduccionColumns: [
+      { key: "costales_harina", label: "Costales de harina usados", index: 5 },
+      { key: "produccion_granel", label: "Cajas de Granel producidas", index: 11 },
+    ],
+  },
 };
 function unitsFor(product) {
   return PRODUCT_UNITS[product?.id] || { pedido: "unidades", produccion: "unidades", stock: "unidades", rendimiento: "prod." };
@@ -1275,6 +1292,23 @@ function renderKpis(report) {
       '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-two">' +
         renderKpiCard("Piezas", format(postre.produccionPiezas), "endomados") +
         renderKpiCard("Moldes", format(postre.moldes), "8 piezas por molde") +
+      '</div></div>' +
+    '</section>';
+  }
+
+  if (report.product.id === "12") {
+    const pedidosGranel = report.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_granel")?.total || 0;
+    const costalesHarina = report.kpis.extraProduccionTotals?.find((item) => item.key === "costales_harina")?.total || 0;
+    const produccionGranel = report.kpis.extraProduccionTotals?.find((item) => item.key === "produccion_granel")?.total || 0;
+    return '<section class="kpi-section">' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="kpis kpis-two">' +
+        renderKpiCard("Pedidos totales en Cajas", format(report.kpis.totalPedidos), "cajas de 80 bolsas") +
+        renderKpiCard("Pedidos totales en cajas de Granel", format(pedidosGranel), "cajas de 6 kg") +
+      '</div></div>' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-three">' +
+        renderKpiCard("Costales de harina usados", format(costalesHarina), "costales") +
+        renderKpiCard("Total de cajas producidas", format(report.kpis.totalProduccion), "cajas de 80 bolsas") +
+        renderKpiCard("Cajas de Granel producidas", format(produccionGranel), "cajas de 6 kg") +
       '</div></div>' +
     '</section>';
   }
