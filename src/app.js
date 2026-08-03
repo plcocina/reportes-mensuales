@@ -299,7 +299,22 @@ const PRODUCT_COLUMN_OVERRIDES = {
     stockFinalCol: -1,
     hidePedidoStockDetail: true,
     hideRendimientoSection: true,
-    dessertColumns: { pedidosSucursal: 3, pedidosPlog: 4, produccionPiezas: 6, moldes: 7, materiaStart: 11, materiaEnd: 16 },
+    dessertColumns: {
+      pedidosSucursal: 3,
+      pedidosPlog: 4,
+      produccionPiezas: 6,
+      moldes: 7,
+      materiaStart: 11,
+      materiaEnd: 16,
+      materiaLabels: [
+        "Azúcar (KG)",
+        "Leche evaporada (KG)",
+        "Agua (LT)",
+        "Leche condensada (KG)",
+        "Huevos (LT)",
+        "Domos (PZA)",
+      ],
+    },
   },
 };
 function unitsFor(product) {
