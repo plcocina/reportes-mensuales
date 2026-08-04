@@ -1438,7 +1438,7 @@ function reportView(report) {
                   ${barChart(chart.rows, chart.key, chart.color, chart.average, chart.key)}
                   ${selectedExtraPedidoDetail(chart)}
                 </section>`).join("") || ""}`}
-            ${["01", "02", "03"].includes(report.product.id) ? "" : `
+            ${["01", "02", "03", "04", "05", "06", "07"].includes(report.product.id) ? "" : `
             <section class="panel">
               <h3 class="panel-title">Tabla de pedidos</h3>
               ${renderTable(report.pedidos, report.product.id === "12" ? [
