@@ -1120,6 +1120,8 @@ function monthlyTrendPanel(report) {
     key: "pedidos",
     title: report.kpis.dessertTotals
       ? "Fiebre Mensual de Pedidos en Piezas"
+      : ["01", "02", "03"].includes(report.product.id)
+        ? "Fiebre mensual de Pedidos en Cubetas"
       : report.product.id === "12"
         ? "Fiebre mensual de Pedidos en Cajas"
       : report.product.id === "08"
