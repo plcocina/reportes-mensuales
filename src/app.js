@@ -326,7 +326,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
     hidePedidoStockDetail: true,
     hideRendimientoSection: true,
     extraPedidoColumns: [
-      { key: "pedidos_granel", label: "Pedidos en cajas de Granel", index: 4, color: "#7c3aed" },
+      { key: "pedidos_granel", label: "Pedidos en cajas de Granel", index: 4, color: "#7c3aed", unit: "cajas" },
     ],
     extraProduccionColumns: [
       { key: "costales_harina", label: "Costales de harina usados", index: 5 },
@@ -678,10 +678,11 @@ function parseProductionSheet(rows, product, month) {
     moldes: totalOllas,
   } : null;
 
-  const extraPedidoCharts = extraPedidoColumns.map(({ key, label, color }) => ({
+  const extraPedidoCharts = extraPedidoColumns.map(({ key, label, color, unit }) => ({
     key,
     label,
     color,
+    unit,
     average: avg(dailyRows, key),
     rows: dailyRows.map(({ dia, fecha, [key]: value }) => ({ dia, fecha, [key]: value })),
   }));
@@ -1250,7 +1251,7 @@ function selectedExtraPedidoDetail(chart) {
 
   const cards = [
     ["Día", `${row.dia} ${row.fecha}`],
-    ["Cantidad", `${format(row[chart.key])} bolsas`],
+    ["Cantidad", `${format(row[chart.key])} ${chart.unit || "bolsas"}`],
   ];
 
   return `
@@ -1404,7 +1405,11 @@ function reportView(report) {
                 </section>`).join("") || ""}`}
             <section class="panel">
               <h3 class="panel-title">Tabla de pedidos</h3>
-              ${renderTable(report.pedidos, report.extraPedidoCharts?.length ? [
+              ${renderTable(report.pedidos, report.product.id === "12" ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "pedidos", label: "Cajas Pedidas", format: (v) => format(v) },
+                { key: "pedidos_granel", label: "Cajas a Granel", format: (v) => format(v) },
+              ] : report.extraPedidoCharts?.length ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "pedidos", label: report.product.id === "06" || report.product.id === "07" ? "PEDIDOS KG" : "Pedidos en KG", format: (v) => format(v) },
                 { key: "pedidos_chicas_1kg", label: report.product.id === "05" ? "Pedidos en Bolsas de 1.2 KG" : report.product.id === "06" || report.product.id === "07" ? "BOL. CH (1.6 KG)" : "Pedidos en Bolsas Chicas (1 KG)", format: (v) => format(v) },
