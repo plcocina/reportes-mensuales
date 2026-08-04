@@ -1264,6 +1264,24 @@ function selectedExtraPedidoDetail(chart) {
     </div>`;
 }
 
+function selectedMetricDetail(rows, key, section, label, unit) {
+  if (state.selectedDay?.section !== section) return "";
+  const row = rows.find((item) => item.fecha === state.selectedDay.fecha);
+  if (!row) return "";
+
+  return `
+    <div class="day-detail">
+      <div class="day-detail-card">
+        <span>Día</span>
+        <strong>${row.dia} ${row.fecha}</strong>
+      </div>
+      <div class="day-detail-card">
+        <span>${label}</span>
+        <strong>${format(row[key])} ${unit}</strong>
+      </div>
+    </div>`;
+}
+
 function renderKpiCard(label, value, note) {
   return '<div class="kpi"><div class="kpi-label">' + label + '</div><div class="kpi-value">' + value + '</div><div class="kpi-note">' + note + '</div></div>';
 }
@@ -1442,9 +1460,19 @@ function reportView(report) {
               ${barChart(report.produccion, "produccion", SECTIONS.produccion.color, report.kpis.promedioProduccion, "produccion")}
               ${selectedDayDetail(report, "produccion")}
             </section>`}
+            ${report.product.id === "12" ? `
+            <section class="panel">
+              <h3 class="panel-title">Costales de Harina producidos</h3>
+              ${barChart(report.produccion, "costales_harina", "#d97706", avg(report.produccion, "costales_harina"), "costales_harina")}
+              ${selectedMetricDetail(report.produccion, "costales_harina", "costales_harina", "Cantidad", "costales")}
+            </section>` : ""}
             <section class="panel">
               <h3 class="panel-title">${report.product.id === "08" ? "Tabla de consumo interno" : "Tabla de producción"}</h3>
-              ${renderTable(report.produccion, report.product.id === "08" ? [
+              ${renderTable(report.produccion, report.product.id === "12" ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "produccion", label: "Cajas producidas", format: (v) => format(v) },
+                { key: "costales_harina", label: "Costales usados", format: (v) => format(v) },
+              ] : report.product.id === "08" ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "consumo_arroz_lt", label: "Arroz (LT)", format: (v) => format(v, 1) },
                 { key: "consumo_codito_lt", label: "Codito (LT)", format: (v) => format(v, 1) },
