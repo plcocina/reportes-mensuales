@@ -1120,6 +1120,8 @@ function monthlyTrendPanel(report) {
     key: "pedidos",
     title: report.kpis.dessertTotals
       ? "Fiebre Mensual de Pedidos en Piezas"
+      : report.product.id === "12"
+        ? "Fiebre mensual de Pedidos en Cajas"
       : report.product.id === "08"
         ? "Fiebre mensual de pedidos de Bidones"
         : "Fiebre mensual de pedidos en KG",
@@ -1140,6 +1142,7 @@ function monthlyTrendPanel(report) {
   };
   const aceitePl3 = { key: "pedidosPl3", title: "Fiebre mensual de Bidones hacia PL3", unit: "bidones", color: "#2563eb" };
   const postrePlog = { key: "pedidosPlog", title: "Fiebre mensual de pedidos PLOG", unit: "piezas", color: "#2563eb" };
+  const totopoProduccion = { key: "produccion", title: "Fiebre mensual de Producción (cajas producidas)", unit: "cajas", color: "#2563eb" };
   const hasChicas = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_chicas_1kg");
   const hasGrandes = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_grandes_2kg");
   const configs = report.product.id === "07" ? [] : [base];
@@ -1148,9 +1151,10 @@ function monthlyTrendPanel(report) {
   if (report.product.id === "07") configs.push(base);
   if (report.product.id === "08") configs.push(aceitePl3);
   if (report.kpis.dessertTotals) configs.push(postrePlog);
+  if (report.product.id === "12") configs.push(totopoProduccion);
   return configs.map((config) => monthlyTrendSection(report, config)).join("");
 }
-function renderTable(rows, columns, section) {
+function renderTable(rows, columns, section, showTotals = false) {
   if (!rows?.length) return "";
   const selectedFecha = state.selectedDay?.section === section ? state.selectedDay.fecha : null;
   return `
@@ -1166,6 +1170,11 @@ function renderTable(rows, columns, section) {
             )
             .join("")}
         </tbody>
+        ${showTotals ? `<tfoot><tr class="table-total-row">${columns.map((col, index) => {
+          if (index === 0) return "<td>Totales</td>";
+          const total = sum(rows, col.key);
+          return `<td>${col.format ? col.format(total, {}) : format(total)}</td>`;
+        }).join("")}</tr></tfoot>` : ""}
       </table>
     </div>`;
 }
@@ -1504,7 +1513,7 @@ function reportView(report) {
                 { key: "produccion", label: `Producción (${report.units.produccion})`, format: (v) => format(v) },
                 { key: "ollas", label: "Ollas", format: (v) => format(v) },
                 { key: "rendimiento", label: `Rendimiento (${report.units.rendimiento})`, format: (v) => format(v, 2) },
-              ], "produccion")}
+              ], "produccion", report.product.id === "12")}
             </section>
             ${PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? "" : `
             <section class="panel">
@@ -1621,6 +1630,7 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         pedidosGrandes: monthReport.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_grandes_2kg")?.total || 0,
         pedidosPl3: monthReport.kpis.oilTotals?.pedidosPl3 || 0,
         pedidosPlog: monthReport.kpis.dessertTotals?.pedidosPlog || 0,
+        produccion: monthReport.kpis.totalProduccion,
       };
     } catch {
       return {
@@ -1632,6 +1642,7 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         pedidosGrandes: 0,
         pedidosPl3: 0,
         pedidosPlog: 0,
+        produccion: 0,
       };
     }
   }));

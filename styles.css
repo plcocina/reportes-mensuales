@@ -525,6 +525,13 @@ tbody tr.is-selected {
   box-shadow: inset 3px 0 0 #2563eb;
 }
 
+.table-total-row td {
+  background: #e9f7f1;
+  color: #0b6b4f;
+  border-top: 2px solid #108a63;
+  font-weight: 900;
+}
+
 tr:last-child td {
   border-bottom: 0;
 }
