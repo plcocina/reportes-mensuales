@@ -526,10 +526,21 @@ tbody tr.is-selected {
 }
 
 .table-total-row td {
-  background: #e9f7f1;
-  color: #0b6b4f;
-  border-top: 2px solid #108a63;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  background: #d9f2e7;
+  color: #075c44;
+  border-top: 3px solid #108a63;
+  font-size: 15px;
   font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.table-total-row td:first-child {
+  color: #063f31;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 tr:last-child td {
