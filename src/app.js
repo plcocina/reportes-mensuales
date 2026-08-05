@@ -342,10 +342,9 @@ const PRODUCT_COLUMN_OVERRIDES = {
   "13": {
     pedidosCol: 3,
     produccionCol: 13,
-    hideExtraPedidoCharts: true,
     extraPedidoColumns: [
-      { key: "kilos_bolsas", label: "Kilos en Bolsas", index: 1 },
-      { key: "tortilla_kileada", label: "Tortilla Kileada", index: 2 },
+      { key: "kilos_bolsas", label: "Pedidos por Kilos en Bolsas", index: 1, color: "#d97706", unit: "kg" },
+      { key: "tortilla_kileada", label: "Pedidos en Tortilla Kileada", index: 2, color: "#7c3aed", unit: "kg" },
     ],
     extraProduccionColumns: [
       { key: "harina_tio_tono", label: "Harina Tío Toño", index: 6 },
@@ -728,6 +727,10 @@ function parseProductionSheet(rows, product, month) {
       ? `${product.name} en ${month.name}: ${format(totalPedidos)} cajas pedidas y ${format(totalProduccion)} cajas producidas. ` +
         `El mayor pedido fue ${format(topPedido.pedidos)} cajas el ${topPedido.dia} ${topPedido.fecha}; ` +
         `la mayor producción fue ${format(topProduccion.produccion)} cajas el ${topProduccion.dia} ${topProduccion.fecha}.`
+      : product.id === "13"
+      ? `${product.name} en ${month.name}: ${format(totalPedidos)} kg pedidos y ${format(totalProduccion)} kg producidos. ` +
+        `El mayor pedido fue ${format(topPedido.pedidos)} kg el ${topPedido.dia} ${topPedido.fecha}; ` +
+        `la mayor producción fue ${format(topProduccion.produccion)} kg el ${topProduccion.dia} ${topProduccion.fecha}.`
       : dessertTotals
       ? `${product.name} en ${month.name}: ${format(dessertTotals.pedidosTotales)} piezas pedidas, ${format(dessertTotals.pedidosPlog)} piezas para PLOG y ${format(dessertTotals.produccionPiezas)} piezas producidas.`
       : `${product.name} en ${month.name}: ${totalPedidos.toLocaleString("es-MX")} ${units.pedido} pedidos y ` +
@@ -1376,7 +1379,7 @@ function renderKpis(report) {
         renderKpiCard("Total en KG", format(report.kpis.totalPedidos), "kg") +
       '</div></div>' +
       '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-two">' +
-        renderKpiCard("Harina Tío Toño", format(harinaTioTono), "total del mes") +
+        renderKpiCard("Costales de harina Tío Toño", format(harinaTioTono), "Costales") +
         renderKpiCard("KG de Tortilla", format(report.kpis.totalProduccion), "kg") +
       '</div></div>' +
     '</section>';
@@ -1444,7 +1447,7 @@ function reportView(report) {
 
         <div class="report-stack">
           ${visible.pedidos ? `
-            ${report.product.id === "07" ? `
+            ${["07", "13"].includes(report.product.id) ? `
               ${report.extraPedidoCharts?.map((chart) => `
                 <section class="panel">
                   <h3 class="panel-title">${chart.label}</h3>
@@ -1452,7 +1455,7 @@ function reportView(report) {
                   ${selectedExtraPedidoDetail(chart)}
                 </section>`).join("") || ""}
               <section class="panel">
-                <h3 class="panel-title">Equivalencia en KG</h3>
+                <h3 class="panel-title">${report.product.id === "13" ? "Pedido Total en KG" : "Equivalencia en KG"}</h3>
                 ${barChart(report.pedidos, "pedidos", SECTIONS.pedidos.color, report.kpis.promedioPedidos, "pedidos")}
                 ${selectedDayDetail(report, "pedidos")}
               </section>` : `
@@ -1467,7 +1470,7 @@ function reportView(report) {
                   ${barChart(chart.rows, chart.key, chart.color, chart.average, chart.key)}
                   ${selectedExtraPedidoDetail(chart)}
                 </section>`).join("") || ""}`}
-            ${["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].includes(report.product.id) ? "" : `
+            ${["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"].includes(report.product.id) ? "" : `
             <section class="panel">
               <h3 class="panel-title">Tabla de pedidos</h3>
               ${renderTable(report.pedidos, report.product.id === "12" ? [
