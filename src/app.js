@@ -1387,15 +1387,17 @@ function renderKpis(report) {
     const kilosBolsas = report.kpis.extraPedidoTotals?.find((item) => item.key === "kilos_bolsas")?.total || 0;
     const tortillaKileada = report.kpis.extraPedidoTotals?.find((item) => item.key === "tortilla_kileada")?.total || 0;
     const harinaTioTono = report.kpis.extraProduccionTotals?.find((item) => item.key === "harina_tio_tono")?.total || 0;
+    const rendimientoKgCostal = harinaTioTono ? report.kpis.totalProduccion / harinaTioTono : 0;
     return '<section class="kpi-section">' +
       '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="kpis kpis-three">' +
         renderKpiCard("Kilos en Bolsas", format(kilosBolsas), "kg") +
         renderKpiCard("Tortilla Kileada", format(tortillaKileada), "kg") +
         renderKpiCard("Total en KG", format(report.kpis.totalPedidos), "kg") +
       '</div></div>' +
-      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-two">' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-three">' +
         renderKpiCard("Costales de harina Tío Toño", format(harinaTioTono), "Costales") +
         renderKpiCard("KG de Tortilla", format(report.kpis.totalProduccion), "kg") +
+        renderKpiCard("Rendimiento promedio", format(rendimientoKgCostal, 2), "kg/costal") +
       '</div></div>' +
     '</section>';
   }
@@ -1569,7 +1571,7 @@ function reportView(report) {
                 { key: "rendimiento", label: `Rendimiento (${report.units.rendimiento})`, format: (v) => format(v, 2) },
               ], "produccion", report.product.id === "12")}
             </section>
-            ${PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection && report.product.id !== "13" ? "" : `
+            ${PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? "" : `
             <section class="panel">
               <h3 class="panel-title">Rendimiento diario</h3>
               ${lineChart(report.produccion)}
