@@ -642,6 +642,10 @@ function parseProductionSheet(rows, product, month) {
       consumo_salsa_verde_lt: oilColumns ? number(row[oilColumns.salsaVerdeLt]) : 0,
       total_consumido_lt: oilColumns ? number(row[oilColumns.totalLt]) : 0,
       total_consumido_kg: oilColumns ? number(row[oilColumns.totalKg]) : 0,
+      kg_totopo: product.id === "12" ? number(row[12]) * 5.6 : 0,
+      rendimiento_totopo: product.id === "12" && number(row[5])
+        ? (number(row[12]) * 5.6) / number(row[5])
+        : 0,
       ...Object.fromEntries(extraPedidoColumns.map(({ key, index }) => [key, number(row[index])])),
       ...Object.fromEntries(extraProduccionColumns.map(({ key, index }) => [key, number(row[index])])),
       ...Object.fromEntries(stackedProductionColumns.map(({ key, index }) => [key, number(row[index])])),
@@ -786,6 +790,8 @@ function parseProductionSheet(rows, product, month) {
       consumo_salsa_verde_lt: row.consumo_salsa_verde_lt,
       total_consumido_lt: row.total_consumido_lt,
       total_consumido_kg: row.total_consumido_kg,
+      kg_totopo: row.kg_totopo,
+      rendimiento_totopo: row.rendimiento_totopo,
       ...Object.fromEntries(extraProduccionColumns.map(({ key }) => [key, row[key]])),
     })),
     materias: materiaTotals,
@@ -1369,16 +1375,14 @@ function renderKpis(report) {
   if (report.product.id === "12") {
     const pedidosGranel = report.kpis.extraPedidoTotals?.find((item) => item.key === "pedidos_granel")?.total || 0;
     const costalesHarina = report.kpis.extraProduccionTotals?.find((item) => item.key === "costales_harina")?.total || 0;
-    const produccionGranel = report.kpis.extraProduccionTotals?.find((item) => item.key === "produccion_granel")?.total || 0;
     return '<section class="kpi-section">' +
       '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="kpis kpis-two">' +
         renderKpiCard("Pedidos totales en Cajas", format(report.kpis.totalPedidos), "cajas de 80 bolsas") +
         renderKpiCard("Pedidos totales en cajas de Granel", format(pedidosGranel), "cajas de 6 kg") +
       '</div></div>' +
-      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-three">' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-two">' +
         renderKpiCard("Costales de harina usados", format(costalesHarina), "costales") +
         renderKpiCard("Total de cajas producidas", format(report.kpis.totalProduccion), "cajas de 80 bolsas") +
-        renderKpiCard("Cajas de Granel producidas", format(produccionGranel), "cajas de 6 kg") +
       '</div></div>' +
     '</section>';
   }
@@ -1571,6 +1575,17 @@ function reportView(report) {
                 { key: "rendimiento", label: `Rendimiento (${report.units.rendimiento})`, format: (v) => format(v, 2) },
               ], "produccion", report.product.id === "12")}
             </section>
+            ${report.product.id === "12" ? `
+            <section class="panel">
+              <h3 class="panel-title">Rendimiento de KG de Totopo por Costal</h3>
+              ${renderTable(report.produccion, [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "produccion", label: "Cajas producidas", format: (v) => format(v) },
+                { key: "kg_totopo", label: "Totopo producido (KG)", format: (v) => format(v, 1) },
+                { key: "costales_harina", label: "Costales de Harina", format: (v) => format(v) },
+                { key: "rendimiento_totopo", label: "Rendimiento (KG/Costal)", format: (v) => format(v, 2) },
+              ], "rendimiento_totopo")}
+            </section>` : ""}
             ${PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? "" : `
             <section class="panel">
               <h3 class="panel-title">Rendimiento diario</h3>
