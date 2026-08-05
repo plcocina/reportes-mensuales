@@ -49,7 +49,7 @@ const PRODUCT_UNITS = {
   "10": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
   "11": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
   "12": { pedido: "cajas", produccion: "cajas", stock: "cajas", rendimiento: "cajas/prod." },
-  "13": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
+  "13": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/prod." },
 };
 
 const PRODUCT_COLUMN_OVERRIDES = {
@@ -337,6 +337,18 @@ const PRODUCT_COLUMN_OVERRIDES = {
       { key: "masa_kg", label: "Masa (KG)", index: 9 },
       { key: "tortilla_kg", label: "Tortilla (KG)", index: 10 },
       { key: "produccion_granel", label: "Cajas de Granel producidas", index: 11 },
+    ],
+  },
+  "13": {
+    pedidosCol: 3,
+    produccionCol: 13,
+    hideExtraPedidoCharts: true,
+    extraPedidoColumns: [
+      { key: "kilos_bolsas", label: "Kilos en Bolsas", index: 1 },
+      { key: "tortilla_kileada", label: "Tortilla Kileada", index: 2 },
+    ],
+    extraProduccionColumns: [
+      { key: "harina_tio_tono", label: "Harina Tío Toño", index: 6 },
     ],
   },
 };
@@ -684,7 +696,7 @@ function parseProductionSheet(rows, product, month) {
     moldes: totalOllas,
   } : null;
 
-  const extraPedidoCharts = extraPedidoColumns.map(({ key, label, color, unit }) => ({
+  const extraPedidoCharts = columnOverride.hideExtraPedidoCharts ? [] : extraPedidoColumns.map(({ key, label, color, unit }) => ({
     key,
     label,
     color,
@@ -1349,6 +1361,23 @@ function renderKpis(report) {
         renderKpiCard("Costales de harina usados", format(costalesHarina), "costales") +
         renderKpiCard("Total de cajas producidas", format(report.kpis.totalProduccion), "cajas de 80 bolsas") +
         renderKpiCard("Cajas de Granel producidas", format(produccionGranel), "cajas de 6 kg") +
+      '</div></div>' +
+    '</section>';
+  }
+
+  if (report.product.id === "13") {
+    const kilosBolsas = report.kpis.extraPedidoTotals?.find((item) => item.key === "kilos_bolsas")?.total || 0;
+    const tortillaKileada = report.kpis.extraPedidoTotals?.find((item) => item.key === "tortilla_kileada")?.total || 0;
+    const harinaTioTono = report.kpis.extraProduccionTotals?.find((item) => item.key === "harina_tio_tono")?.total || 0;
+    return '<section class="kpi-section">' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Pedidos</h3><div class="kpis kpis-three">' +
+        renderKpiCard("Kilos en Bolsas", format(kilosBolsas), "kg") +
+        renderKpiCard("Tortilla Kileada", format(tortillaKileada), "kg") +
+        renderKpiCard("Total en KG", format(report.kpis.totalPedidos), "kg") +
+      '</div></div>' +
+      '<div class="kpi-group"><h3 class="kpi-group-title">Producción</h3><div class="kpis kpis-two">' +
+        renderKpiCard("Harina Tío Toño", format(harinaTioTono), "total del mes") +
+        renderKpiCard("KG de Tortilla", format(report.kpis.totalProduccion), "kg") +
       '</div></div>' +
     '</section>';
   }
