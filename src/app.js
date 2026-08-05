@@ -49,7 +49,7 @@ const PRODUCT_UNITS = {
   "10": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
   "11": { pedido: "piezas", produccion: "piezas", stock: "piezas", rendimiento: "pzas/prod." },
   "12": { pedido: "cajas", produccion: "cajas", stock: "cajas", rendimiento: "cajas/prod." },
-  "13": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/prod." },
+  "13": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/costal" },
 };
 
 const PRODUCT_COLUMN_OVERRIDES = {
@@ -629,7 +629,9 @@ function parseProductionSheet(rows, product, month) {
       pedidos: dessertColumns ? number(row[pedidosCol]) + number(row[dessertColumns.pedidosSucursal]) : number(row[pedidosCol]),
       produccion: dessertColumns ? number(row[dessertColumns.produccionPiezas]) : product.id === "08" && oilColumns ? number(row[oilColumns.totalLt]) : product.id === "07" ? (number(row[11]) * 1.6) + (number(row[23]) * 5) : produccionSumCols ? produccionSumCols.reduce((total, index) => total + number(row[index]), 0) : number(row[produccionCol]),
       ollas: dessertColumns ? number(row[dessertColumns.moldes]) : number(row[ollasCol]),
-      rendimiento: number(row[rendimientoCol]),
+      rendimiento: product.id === "13"
+        ? (number(row[6]) ? number(row[13]) / number(row[6]) : 0)
+        : number(row[rendimientoCol]),
       stock_final: number(row[stockFinalCol]),
       pedidos_sucursal: dessertColumns ? number(row[dessertColumns.pedidosSucursal]) : oilColumns ? number(row[oilColumns.pedidosSucursal]) : 0,
       pedidos_plog: dessertColumns ? number(row[dessertColumns.pedidosPlog]) : 0,
@@ -1240,7 +1242,14 @@ function selectedDayDetail(report, section) {
           ["Stock final", `${format(pedido.stock_final)} ${units.stock}`],
         ]
     : section === "rendimiento"
-    ? [
+    ? report.product.id === "13"
+      ? [
+          ["Día", `${rendimiento.dia} ${rendimiento.fecha}`],
+          ["Rendimiento", `${format(rendimiento.rendimiento, 2)} kg/costal`],
+          ["Producción", `${format(rendimiento.produccion)} kg`],
+          ["Costales", format(rendimiento.harina_tio_tono)],
+        ]
+      : [
         ["Día", `${rendimiento.dia} ${rendimiento.fecha}`],
         ["Rendimiento", `${format(rendimiento.rendimiento, 2)} ${units.rendimiento}`],
         ["Producción", `${format(rendimiento.produccion)} ${units.produccion}`],
@@ -1560,7 +1569,7 @@ function reportView(report) {
                 { key: "rendimiento", label: `Rendimiento (${report.units.rendimiento})`, format: (v) => format(v, 2) },
               ], "produccion", report.product.id === "12")}
             </section>
-            ${PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection ? "" : `
+            ${PRODUCT_COLUMN_OVERRIDES[report.product.id]?.hideRendimientoSection && report.product.id !== "13" ? "" : `
             <section class="panel">
               <h3 class="panel-title">Rendimiento diario</h3>
               ${lineChart(report.produccion)}
