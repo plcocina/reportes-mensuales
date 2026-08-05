@@ -874,8 +874,8 @@ function format(value, digits = 0) {
 function barChart(rows, key, color, average, section) {
   if (!rows?.length) return "";
   const width = 1100;
-  const height = 300;
-  const pad = { top: 22, right: 24, bottom: 38, left: 48 };
+  const height = 336;
+  const pad = { top: 64, right: 24, bottom: 38, left: 48 };
   const maxValue = Math.max(...rows.map((row) => number(row[key])), average || 0) * 1.12 || 1;
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
@@ -903,11 +903,14 @@ function barChart(rows, key, color, average, section) {
 
   return `
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfica de ${key}">
+      <g aria-label="Media ${format(average, 1)}">
+        <rect x="${pad.left}" y="8" width="210" height="44" rx="10" fill="#f0f7f4" stroke="${color}" stroke-width="1.5"></rect>
+        <text x="${pad.left + 16}" y="25" font-size="11" font-weight="900" letter-spacing="1" fill="#526071">MEDIA</text>
+        <text x="${pad.left + 16}" y="44" font-size="20" font-weight="900" fill="#172033">${format(average, 1)}</text>
+      </g>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
       <line x1="${pad.left}" x2="${pad.left}" y1="${pad.top}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${avgY}" y2="${avgY}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
-      <rect x="${width - pad.right - 128}" y="${pad.top - 16}" width="124" height="24" rx="6" fill="#ffffff" stroke="#cfd6e2"></rect>
-      <text x="${width - pad.right - 66}" y="${pad.top + 1}" text-anchor="middle" font-size="12" font-weight="800" fill="#405066">Media ${format(average, 1)}</text>
       ${bars}
     </svg>`;
 }
@@ -1001,8 +1004,8 @@ function lineChart(rows) {
   const valid = rows.filter((row) => row.rendimiento);
   if (valid.length < 2) return "";
   const width = 1100;
-  const height = 280;
-  const pad = { top: 36, right: 24, bottom: 38, left: 48 };
+  const height = 322;
+  const pad = { top: 78, right: 24, bottom: 38, left: 48 };
   const values = valid.map((row) => row.rendimiento);
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const sigma = std(values);
@@ -1033,10 +1036,14 @@ function lineChart(rows) {
 
   return `
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
+      <g aria-label="Media ${mean.toFixed(2)}; coeficiente de variación ${cv.toFixed(1)} por ciento">
+        <rect x="${pad.left}" y="10" width="310" height="54" rx="11" fill="#f2f0ff" stroke="#6255d9" stroke-width="1.5"></rect>
+        <text x="${pad.left + 16}" y="29" font-size="11" font-weight="900" letter-spacing="1" fill="#6255d9">MEDIA DE RENDIMIENTO</text>
+        <text x="${pad.left + 16}" y="53" font-size="22" font-weight="900" fill="#172033">${mean.toFixed(2)}</text>
+        <text x="${pad.left + 116}" y="52" font-size="14" font-weight="800" fill="#526071">CV ${cv.toFixed(1)}%</text>
+      </g>
       <rect x="${pad.left}" y="${bandTop}" width="${chartW}" height="${bandBottom - bandTop}" fill="#6255d9" opacity="0.08"></rect>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
-      <rect x="${width - pad.right - 250}" y="${pad.top - 36}" width="246" height="34" rx="8" fill="#ffffff" stroke="#cfd6e2"></rect>
-      <text x="${width - pad.right - 127}" y="${pad.top - 13}" text-anchor="middle" font-size="17" font-weight="900" fill="#405066">Prom. ${mean.toFixed(2)} · CV ${cv.toFixed(1)}%</text>
       <path d="${path}" fill="none" stroke="#6255d9" stroke-width="3"></path>
       ${dots}
     </svg>`;
