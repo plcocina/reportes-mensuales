@@ -1182,11 +1182,17 @@ function monthlyTrendPanel(report) {
 function renderTable(rows, columns, section, showTotals = false) {
   if (!rows?.length) return "";
   const selectedFecha = state.selectedDay?.section === section ? state.selectedDay.fecha : null;
+  const totalsRow = showTotals ? `<tr class="table-total-row table-total-row-top">${columns.map((col, index) => {
+    if (index === 0) return "<td>Totales</td>";
+    const total = sum(rows, col.key);
+    return `<td>${col.format ? col.format(total, {}) : format(total)}</td>`;
+  }).join("")}</tr>` : "";
   return `
     <div class="table-wrap">
       <table>
         <thead><tr>${columns.map((col) => `<th>${col.label}</th>`).join("")}</tr></thead>
         <tbody>
+          ${totalsRow}
           ${rows
             .map(
               (row) => `<tr class="${selectedFecha === row.fecha ? "is-selected" : ""}" data-table-row="true" data-section="${section}" data-fecha="${row.fecha || ""}" tabindex="${row.fecha ? "0" : "-1"}">${columns
@@ -1195,11 +1201,6 @@ function renderTable(rows, columns, section, showTotals = false) {
             )
             .join("")}
         </tbody>
-        ${showTotals ? `<tfoot><tr class="table-total-row">${columns.map((col, index) => {
-          if (index === 0) return "<td>Totales</td>";
-          const total = sum(rows, col.key);
-          return `<td>${col.format ? col.format(total, {}) : format(total)}</td>`;
-        }).join("")}</tr></tfoot>` : ""}
       </table>
     </div>`;
 }
@@ -1539,13 +1540,13 @@ function reportView(report) {
                 { key: "harina_tio_tono", label: "Costales de Harina", format: (v) => format(v) },
               ] : report.product.id === "12" ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
-                { key: "produccion", label: "Cajas producidas", format: (v) => format(v) },
-                { key: "costales_harina", label: "Costales usados", format: (v) => format(v) },
                 { key: "harina_kg", label: "Harina (KG)", format: (v) => format(v, 1) },
                 { key: "agua_lt", label: "Agua (LT)", format: (v) => format(v, 1) },
                 { key: "sal_kg", label: "Sal (KG)", format: (v) => format(v, 1) },
                 { key: "masa_kg", label: "Masa (KG)", format: (v) => format(v, 1) },
                 { key: "tortilla_kg", label: "Tortilla (KG)", format: (v) => format(v, 1) },
+                { key: "costales_harina", label: "Costales", format: (v) => format(v) },
+                { key: "produccion", label: "Cajas", format: (v) => format(v) },
               ] : report.product.id === "08" ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "consumo_arroz_lt", label: "Arroz (LT)", format: (v) => format(v, 1) },
@@ -1640,9 +1641,9 @@ function appView() {
   return `
     <div class="shell ${state.sidebarCollapsed ? "is-sidebar-collapsed" : ""}">
       <header class="topbar">
-        <div class="brand-mark">PL</div>
+        <div class="brand-mark" aria-label="Estadísticas">📊</div>
         <div>
-          <h1 class="brand-title">Dashboard de Producción</h1>
+          <h1 class="brand-title">Reportes de Pedidos y Producción</h1>
           <p class="brand-subtitle">PL Cocina · Reportes desde Google Sheets</p>
         </div>
         <button class="menu-toggle" data-action="toggle-sidebar" aria-pressed="${state.sidebarCollapsed}">${state.sidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}</button>

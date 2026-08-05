@@ -2,7 +2,7 @@
 
 Dashboard estatico para GitHub Pages:
 
-https://plcocina.github.io/dashboard-reportes-mensuales/
+https://plcocina.github.io/reportes-mensuales/
 
 ## Como funciona
 
@@ -31,7 +31,7 @@ Tambien puede funcionar con `Compartir > Cualquier persona con el enlace > Lecto
 
 ## Publicar en GitHub Pages
 
-1. Crear el repositorio `dashboard-reportes-mensuales` en la cuenta `plcocina`.
+1. Crear el repositorio `reportes-mensuales` en la cuenta `plcocina`.
 2. Subir estos archivos a la rama principal:
    - `index.html`
    - `styles.css`
@@ -40,7 +40,7 @@ Tambien puede funcionar con `Compartir > Cualquier persona con el enlace > Lecto
 3. En GitHub: `Settings > Pages`.
 4. Source: `Deploy from a branch`.
 5. Branch: `main`, folder `/root`.
-6. Abrir `https://plcocina.github.io/dashboard-reportes-mensuales/`.
+6. Abrir `https://plcocina.github.io/reportes-mensuales/`.
 
 ## Catalogo
 
