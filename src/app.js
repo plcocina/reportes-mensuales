@@ -342,6 +342,9 @@ const PRODUCT_COLUMN_OVERRIDES = {
   "13": {
     pedidosCol: 3,
     produccionCol: 13,
+    hidePedidoStockDetail: true,
+    hideRendimientoSection: true,
+    hideMateriasSection: true,
     extraPedidoColumns: [
       { key: "kilos_bolsas", label: "Pedidos por Kilos en Bolsas", index: 1, color: "#d97706", unit: "kg" },
       { key: "tortilla_kileada", label: "Pedidos en Tortilla Kileada", index: 2, color: "#7c3aed", unit: "kg" },
@@ -1160,6 +1163,8 @@ function monthlyTrendPanel(report) {
   const aceitePl3 = { key: "pedidosPl3", title: "Fiebre mensual de Bidones hacia PL3", unit: "bidones", color: "#2563eb" };
   const postrePlog = { key: "pedidosPlog", title: "Fiebre mensual de pedidos PLOG", unit: "piezas", color: "#2563eb" };
   const totopoProduccion = { key: "produccion", title: "Fiebre mensual de Producción (cajas producidas)", unit: "cajas", color: "#2563eb" };
+  const tortillaProduccion = { key: "produccion", title: "Fiebre mensual de Producción de Tortilla", unit: "kg", color: "#2563eb" };
+  const tortillaCostales = { key: "costalesHarina", title: "Fiebre mensual de Consumo de Costales de Harina", unit: "costales", color: "#d97706" };
   const hasChicas = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_chicas_1kg");
   const hasGrandes = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_grandes_2kg");
   const configs = report.product.id === "07" ? [] : [base];
@@ -1169,6 +1174,7 @@ function monthlyTrendPanel(report) {
   if (report.product.id === "08") configs.push(aceitePl3);
   if (report.kpis.dessertTotals) configs.push(postrePlog);
   if (report.product.id === "12") configs.push(totopoProduccion);
+  if (report.product.id === "13") configs.push(tortillaProduccion, tortillaCostales);
   return configs.map((config) => monthlyTrendSection(report, config)).join("");
 }
 function renderTable(rows, columns, section, showTotals = false) {
@@ -1518,7 +1524,11 @@ function reportView(report) {
             </section>` : ""}
             <section class="panel">
               <h3 class="panel-title">${report.product.id === "08" ? "Tabla de consumo interno" : "Tabla de producción"}</h3>
-              ${renderTable(report.produccion, report.product.id === "12" ? [
+              ${renderTable(report.produccion, report.product.id === "13" ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "produccion", label: "Producción (KG)", format: (v) => format(v) },
+                { key: "harina_tio_tono", label: "Costales de Harina", format: (v) => format(v) },
+              ] : report.product.id === "12" ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "produccion", label: "Cajas producidas", format: (v) => format(v) },
                 { key: "costales_harina", label: "Costales usados", format: (v) => format(v) },
@@ -1666,6 +1676,7 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         pedidosPl3: monthReport.kpis.oilTotals?.pedidosPl3 || 0,
         pedidosPlog: monthReport.kpis.dessertTotals?.pedidosPlog || 0,
         produccion: monthReport.kpis.totalProduccion,
+        costalesHarina: monthReport.kpis.extraProduccionTotals?.find((item) => item.key === "harina_tio_tono")?.total || 0,
       };
     } catch {
       return {
@@ -1678,6 +1689,7 @@ async function fetchMonthlyPedidosTrend(product, selectedMonth, selectedReport) 
         pedidosPl3: 0,
         pedidosPlog: 0,
         produccion: 0,
+        costalesHarina: 0,
       };
     }
   }));
