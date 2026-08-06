@@ -839,10 +839,10 @@ tr:last-child td {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 9px;
     border: 1px solid var(--chart-color, #2563eb);
     border-radius: 10px;
-    padding: 12px 14px;
+    padding: 8px 11px;
     background: #f8fafc;
   }
 
@@ -856,24 +856,30 @@ tr:last-child td {
 
   .mobile-chart-average strong {
     color: #172033;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 950;
   }
 
   .mobile-bar-list {
     display: grid;
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(16, 34px);
+    grid-auto-flow: column;
+    gap: 3px;
+    column-gap: 10px;
   }
 
   .mobile-bar-row {
     display: grid;
-    gap: 9px;
+    grid-template-columns: 20px minmax(0, 1fr) 34px;
+    align-items: center;
+    gap: 4px;
     width: 100%;
-    min-height: 70px;
-    border: 2px solid #e2e7ef;
-    border-radius: 10px;
-    padding: 11px 12px;
-    background: #ffffff;
+    min-height: 34px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 3px 4px;
+    background: transparent;
     color: #172033;
     text-align: left;
     touch-action: manipulation;
@@ -883,32 +889,27 @@ tr:last-child td {
   .mobile-bar-row.is-selected {
     border-color: #172033;
     background: #f4f7fb;
-    box-shadow: 0 0 0 2px rgba(23, 32, 51, 0.12);
+    box-shadow: 0 0 0 1px rgba(23, 32, 51, 0.1);
   }
 
-  .mobile-bar-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+  .mobile-bar-day {
+    color: #526071;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: right;
   }
 
-  .mobile-bar-head strong {
-    font-size: 16px;
-    font-weight: 850;
-    text-transform: capitalize;
-  }
-
-  .mobile-bar-head b {
+  .mobile-bar-value {
     color: #172033;
-    font-size: 19px;
+    font-size: 12px;
     font-weight: 950;
+    text-align: right;
   }
 
   .mobile-bar-track {
     display: flex;
     width: 100%;
-    height: 13px;
+    height: 15px;
     overflow: hidden;
     border-radius: 999px;
     background: #e9edf3;
@@ -931,9 +932,9 @@ tr:last-child td {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 12px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     border-radius: 10px;
-    padding: 12px;
+    padding: 8px 10px;
     background: #f8fafc;
   }
 

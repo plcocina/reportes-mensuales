@@ -907,8 +907,9 @@ function barChart(rows, key, color, average, section) {
     const widthPercent = Math.max(2, (value / maxValue) * 100);
     return `
       <button class="mobile-bar-row${selected ? " is-selected" : ""}" data-chart-bar="true" data-section="${section}" data-fecha="${row.fecha}" aria-label="${row.dia} ${row.fecha}: ${format(value)}">
-        <span class="mobile-bar-head"><strong>${row.dia} ${row.fecha}</strong><b>${format(value)}</b></span>
+        <strong class="mobile-bar-day">${row.fecha}</strong>
         <span class="mobile-bar-track"><span class="mobile-bar-fill" style="width: ${widthPercent}%; background: ${color};"></span></span>
+        <b class="mobile-bar-value">${format(value)}</b>
       </button>`;
   }).join("");
 
@@ -995,8 +996,9 @@ function stackedIngredientChart(chart) {
     }).join("");
     return `
       <button class="mobile-bar-row${selected ? " is-selected" : ""}" data-chart-stacked="true" data-section="${chart.key}" data-fecha="${row.fecha}" aria-label="${chart.title}: ${row.dia} ${row.fecha}, total ${format(total)}">
-        <span class="mobile-bar-head"><strong>${row.dia} ${row.fecha}</strong><b>${format(total)}</b></span>
+        <strong class="mobile-bar-day">${row.fecha}</strong>
         <span class="mobile-bar-track mobile-stacked-track">${segments}</span>
+        <b class="mobile-bar-value">${format(total)}</b>
       </button>`;
   }).join("");
 
