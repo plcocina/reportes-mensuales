@@ -901,8 +901,19 @@ function barChart(rows, key, color, average, section) {
     })
     .join("");
 
+  const mobileBars = rows.map((row) => {
+    const value = number(row[key]);
+    const selected = selectedFecha === row.fecha;
+    const widthPercent = Math.max(2, (value / maxValue) * 100);
+    return `
+      <button class="mobile-bar-row${selected ? " is-selected" : ""}" data-chart-bar="true" data-section="${section}" data-fecha="${row.fecha}" aria-label="${row.dia} ${row.fecha}: ${format(value)}">
+        <span class="mobile-bar-head"><strong>${row.dia} ${row.fecha}</strong><b>${format(value)}</b></span>
+        <span class="mobile-bar-track"><span class="mobile-bar-fill" style="width: ${widthPercent}%; background: ${color};"></span></span>
+      </button>`;
+  }).join("");
+
   return `
-    <div class="chart-scroll" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
+    <div class="chart-scroll desktop-bar-chart" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfica de ${key}">
       <g aria-label="Media ${format(average, 1)}">
         <rect x="${pad.left}" y="8" width="210" height="44" rx="10" fill="#f0f7f4" stroke="${color}" stroke-width="1.5"></rect>
@@ -914,6 +925,10 @@ function barChart(rows, key, color, average, section) {
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${avgY}" y2="${avgY}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
       ${bars}
     </svg>
+    </div>
+    <div class="mobile-bar-chart" style="--chart-color: ${color};">
+      <div class="mobile-chart-average"><span>Media diaria</span><strong>${format(average, 1)}</strong></div>
+      <div class="mobile-bar-list">${mobileBars}</div>
     </div>`;
 }
 
@@ -971,8 +986,25 @@ function stackedIngredientChart(chart) {
       </g>`;
   }).join("");
 
+  const mobileStackedBars = rows.map((row) => {
+    const total = columns.reduce((sumTotal, column) => sumTotal + number(row[column.key]), 0);
+    const selected = selectedFecha === row.fecha;
+    const segments = columns.map((column) => {
+      const segmentWidth = (number(row[column.key]) / maxValue) * 100;
+      return segmentWidth ? `<span style="width: ${segmentWidth}%; background: ${column.color};"></span>` : "";
+    }).join("");
+    return `
+      <button class="mobile-bar-row${selected ? " is-selected" : ""}" data-chart-stacked="true" data-section="${chart.key}" data-fecha="${row.fecha}" aria-label="${chart.title}: ${row.dia} ${row.fecha}, total ${format(total)}">
+        <span class="mobile-bar-head"><strong>${row.dia} ${row.fecha}</strong><b>${format(total)}</b></span>
+        <span class="mobile-bar-track mobile-stacked-track">${segments}</span>
+      </button>`;
+  }).join("");
+
+  const mobileLegend = columns.map((column) => `
+    <span><i style="background: ${column.color};"></i>${column.label}</span>`).join("");
+
   return `
-    <div class="chart-scroll" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
+    <div class="chart-scroll desktop-bar-chart" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart stacked-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${chart.title}">
       <text x="${pad.left}" y="36" font-size="22" font-weight="800" fill="#526071">${chart.title.toUpperCase()}</text>
       ${grid}
@@ -980,6 +1012,10 @@ function stackedIngredientChart(chart) {
       ${bars}
       ${legend}
     </svg>
+    </div>
+    <div class="mobile-bar-chart mobile-stacked-chart">
+      <div class="mobile-chart-legend">${mobileLegend}</div>
+      <div class="mobile-bar-list">${mobileStackedBars}</div>
     </div>`;
 }
 
