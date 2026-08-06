@@ -902,6 +902,7 @@ function barChart(rows, key, color, average, section) {
     .join("");
 
   return `
+    <div class="chart-scroll" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfica de ${key}">
       <g aria-label="Media ${format(average, 1)}">
         <rect x="${pad.left}" y="8" width="210" height="44" rx="10" fill="#f0f7f4" stroke="${color}" stroke-width="1.5"></rect>
@@ -912,7 +913,8 @@ function barChart(rows, key, color, average, section) {
       <line x1="${pad.left}" x2="${pad.left}" y1="${pad.top}" y2="${pad.top + chartH}" stroke="#d8dee9"></line>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${avgY}" y2="${avgY}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
       ${bars}
-    </svg>`;
+    </svg>
+    </div>`;
 }
 
 
@@ -970,13 +972,15 @@ function stackedIngredientChart(chart) {
   }).join("");
 
   return `
+    <div class="chart-scroll" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart stacked-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${chart.title}">
       <text x="${pad.left}" y="36" font-size="22" font-weight="800" fill="#526071">${chart.title.toUpperCase()}</text>
       ${grid}
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#202938" stroke-width="1.5"></line>
       ${bars}
       ${legend}
-    </svg>`;
+    </svg>
+    </div>`;
 }
 
 function selectedStackedIngredientDetail(chart) {
@@ -1036,7 +1040,8 @@ function lineChart(rows) {
     .join("");
 
   return `
-    <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
+    <div class="chart-scroll" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
+    <svg class="chart rendimiento-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
       <g aria-label="Media ${mean.toFixed(2)}; coeficiente de variación ${cv.toFixed(1)} por ciento">
         <rect x="${pad.left}" y="10" width="310" height="54" rx="11" fill="#f2f0ff" stroke="#6255d9" stroke-width="1.5"></rect>
         <text x="${pad.left + 16}" y="29" font-size="11" font-weight="900" letter-spacing="1" fill="#6255d9">MEDIA DE RENDIMIENTO</text>
@@ -1047,7 +1052,8 @@ function lineChart(rows) {
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
       <path d="${path}" fill="none" stroke="#6255d9" stroke-width="3"></path>
       ${dots}
-    </svg>`;
+    </svg>
+    </div>`;
 }
 
 function monthlyTrendChart(rows, key = "pedidos", color = "#108a63", unit = "pedidos") {
@@ -1081,6 +1087,7 @@ function monthlyTrendChart(rows, key = "pedidos", color = "#108a63", unit = "ped
   }).join("");
 
   return `
+    <div class="chart-scroll" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart monthly-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${unit} mes a mes">
       <defs>
         <linearGradient id="${fillId}" x1="0" x2="0" y1="0" y2="1">
@@ -1093,7 +1100,8 @@ function monthlyTrendChart(rows, key = "pedidos", color = "#108a63", unit = "ped
       <path d="${areaPath}" fill="url(#${fillId})"></path>
       <path class="chart-month-line" d="${path}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
       ${dots}
-    </svg>`;
+    </svg>
+    </div>`;
 }
 function selectedTrendDetail(rows, key = "pedidos", unit = "pedidos") {
   if (!rows?.length) return "";
@@ -1196,7 +1204,8 @@ function renderTable(rows, columns, section, showTotals = false) {
     return `<td>${col.format ? col.format(total, {}) : format(total)}</td>`;
   }).join("")}</tr>` : "";
   return `
-    <div class="table-wrap">
+    <p class="table-swipe-hint">Desliza la tabla para ver más columnas →</p>
+    <div class="table-wrap" role="region" aria-label="Tabla desplazable horizontalmente" tabindex="0">
       <table>
         <thead><tr>${columns.map((col) => `<th>${col.label}</th>`).join("")}</tr></thead>
         <tbody>
