@@ -964,6 +964,7 @@ function stackedIngredientChart(chart) {
       <g class="chart-bar${selected ? " is-selected" : ""}" data-chart-stacked="true" data-section="${chart.key}" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${chart.title}: día ${row.fecha}">
         <rect class="bar-focus" x="${x - 2}" y="${pad.top}" width="${barW + 4}" height="${chartH}" rx="5"></rect>
         ${segments}
+        <rect class="stacked-bar-outline" x="${x}" y="${yCursor}" width="${barW}" height="${pad.top + chartH - yCursor}" rx="3"></rect>
         <text x="${x + barW / 2}" y="${height - 54}" text-anchor="middle" font-size="11" font-weight="800" fill="#526071">${row.fecha}</text>
       </g>`;
   }).join("");
@@ -1134,7 +1135,7 @@ function monthlyTrendSection(report, config) {
           <h3 class="panel-title">${config.title}</h3>
           <p>${first.name} a ${last.name} · ${report.product.name}</p>
         </div>
-        <strong>${format(value)} ${config.unit}</strong>
+        <strong style="color: ${config.color}; border-color: ${config.color};">${format(value)} ${config.unit}</strong>
       </div>
       ${monthlyTrendChart(rows, config.key, config.color, config.unit)}
       ${selectedTrendDetail(rows, config.key, config.unit)}
