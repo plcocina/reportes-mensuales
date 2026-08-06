@@ -687,7 +687,7 @@ tr:last-child td {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 820px) {
   body {
     font-size: 16px;
   }
