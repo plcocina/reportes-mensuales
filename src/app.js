@@ -37,7 +37,7 @@ const SECTIONS = {
 
 
 const PRODUCT_UNITS = {
-  "01": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
+  "01": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/olla" },
   "02": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/prod." },
   "03": { pedido: "cubetas", produccion: "cubetas", stock: "cubetas", rendimiento: "cub/olla" },
   "04": { pedido: "kg", produccion: "kg", stock: "kg", rendimiento: "kg/olla" },
@@ -53,6 +53,17 @@ const PRODUCT_UNITS = {
 };
 
 const PRODUCT_COLUMN_OVERRIDES = {
+  "01": {
+    stockIniCol: 1,
+    pedidosCol: 2,
+    produccionCol: 4,
+    ollasCol: 5,
+    rendimientoCol: 7,
+    stockFinalCol: 10,
+    extraProduccionColumns: [
+      { key: "marmitas", label: "Marmitas", index: 6 },
+    ],
+  },
   "02": {
     stockIniCol: 1,
     stockFinalCol: 8,
@@ -1305,6 +1316,14 @@ function selectedDayDetail(report, section) {
           ["Producción", `${format(rendimiento.produccion)} kg`],
           ["Costales", format(rendimiento.harina_tio_tono)],
         ]
+      : report.product.id === "01"
+      ? [
+          ["Día", `${rendimiento.dia} ${rendimiento.fecha}`],
+          ["Rendimiento", `${format(rendimiento.rendimiento, 2)} ${units.rendimiento}`],
+          ["Cubetas", format(rendimiento.produccion)],
+          ["Ollas", format(rendimiento.ollas)],
+          ["Marmitas", format(rendimiento.marmitas, 1)],
+        ]
       : [
         ["Día", `${rendimiento.dia} ${rendimiento.fecha}`],
         ["Rendimiento", `${format(rendimiento.rendimiento, 2)} ${units.rendimiento}`],
@@ -1325,6 +1344,14 @@ function selectedDayDetail(report, section) {
         ["Día", `${produccion.dia} ${produccion.fecha}`],
         ["Producción", `${format(produccion.produccion)} piezas`],
         ["Moldes", format(produccion.ollas)],
+      ]
+    : report.product.id === "01"
+    ? [
+        ["Día", `${produccion.dia} ${produccion.fecha}`],
+        ["Cubetas", format(produccion.produccion)],
+        ["Ollas", format(produccion.ollas)],
+        ["Marmitas", format(produccion.marmitas, 1)],
+        ["Rendimiento", `${format(produccion.rendimiento, 2)} ${units.rendimiento}`],
       ]
     : hideRendimiento
     ? [
@@ -1593,6 +1620,12 @@ function reportView(report) {
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "produccion", label: "Producción (KG)", format: (v) => format(v) },
                 { key: "harina_tio_tono", label: "Costales de Harina", format: (v) => format(v) },
+              ] : report.product.id === "01" ? [
+                { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
+                { key: "produccion", label: "Cubetas", format: (v) => format(v) },
+                { key: "ollas", label: "Ollas", format: (v) => format(v) },
+                { key: "marmitas", label: "Marmitas", format: (v) => format(v, 1) },
+                { key: "rendimiento", label: "Rendimiento (Cub. x Olla)", format: (v) => format(v, 2) },
               ] : report.product.id === "12" ? [
                 { key: "fecha", label: "Día", format: (v, row) => `${row.dia} ${row.fecha}` },
                 { key: "harina_kg", label: "Harina (KG)", format: (v) => format(v, 1) },
