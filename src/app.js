@@ -68,6 +68,14 @@ const PRODUCT_COLUMN_OVERRIDES = {
     stockIniCol: 1,
     stockFinalCol: 8,
     rendimientoCol: 6,
+    fromAugust: {
+      stockIniCol: 1,
+      pedidosCol: 2,
+      produccionCol: 4,
+      ollasCol: 5,
+      rendimientoCol: 6,
+      stockFinalCol: 8,
+    },
     materiaColumns: [
       { label: "Tomate (KG)", index: 11 },
       { label: "Serrano (KG)", index: 12 },
@@ -77,6 +85,14 @@ const PRODUCT_COLUMN_OVERRIDES = {
   "03": {
     stockFinalCol: 8,
     rendimientoCol: 6,
+    fromAugust: {
+      stockIniCol: 1,
+      pedidosCol: 2,
+      produccionCol: 4,
+      ollasCol: 5,
+      rendimientoCol: 6,
+      stockFinalCol: 8,
+    },
     materiaColumns: [
       { label: "Pulpa (Bolsas)", index: 11 },
       { label: "Serrano (KG)", index: 12 },
@@ -365,6 +381,14 @@ const PRODUCT_COLUMN_OVERRIDES = {
     ],
   },
 };
+
+function columnOverridesFor(product, month) {
+  const base = PRODUCT_COLUMN_OVERRIDES[product.id] || {};
+  const monthIndex = MONTHS.findIndex(({ id }) => id === month.id);
+  const augustIndex = MONTHS.findIndex(({ id }) => id === "AGO");
+  if (monthIndex < augustIndex || !base.fromAugust) return base;
+  return { ...base, ...base.fromAugust };
+}
 function unitsFor(product) {
   return PRODUCT_UNITS[product?.id] || { pedido: "unidades", produccion: "unidades", stock: "unidades", rendimiento: "prod." };
 }
@@ -572,7 +596,7 @@ function mode(values) {
 function parseProductionSheet(rows, product, month) {
   const headers = chooseHeaderRow(rows);
   const sectionRow = chooseGroupRow(rows);
-  const columnOverride = PRODUCT_COLUMN_OVERRIDES[product.id] || {};
+  const columnOverride = columnOverridesFor(product, month);
   const extraPedidoColumns = columnOverride.extraPedidoColumns || [];
   const extraProduccionColumns = columnOverride.extraProduccionColumns || [];
   const stackedProductionConfig = columnOverride.stackedProductionCharts || [];
