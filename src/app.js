@@ -1728,42 +1728,58 @@ function sidebarView() {
   const canGenerate = Boolean(product && state.monthId);
   return `
     <aside class="sidebar">
-      <div class="field">
-        <label for="product">Producto</label>
-        <select id="product" class="select">
-          <option value="">Elige una opción de producto</option>
-          ${renderSelectOptions(PRODUCTS, state.productId, (item) => `${item.id} · ${item.name}`)}
-        </select>
+      <div class="sidebar-brand">
+        <div class="brand-mark" aria-label="Estadísticas">📊</div>
+        <div>
+          <strong>PL Cocina</strong>
+          <span>Reportes de producción</span>
+        </div>
       </div>
-      <div class="field">
-        <label for="month">Mes</label>
-        <select id="month" class="select">
-          <option value="">Elige una opción de mes</option>
-          ${renderSelectOptions(MONTHS, state.monthId, (item) => `${item.id} · ${item.name}`)}
-        </select>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-nav-title"><span aria-hidden="true">▦</span> Reportes</div>
+      <div class="sidebar-controls">
+        <div class="field">
+          <label for="product">Producto</label>
+          <select id="product" class="select">
+            <option value="">Elige una opción de producto</option>
+            ${renderSelectOptions(PRODUCTS, state.productId, (item) => `${item.id} · ${item.name}`)}
+          </select>
+        </div>
+        <div class="field">
+          <label for="month">Mes</label>
+          <select id="month" class="select">
+            <option value="">Elige una opción de mes</option>
+            ${renderSelectOptions(MONTHS, state.monthId, (item) => `${item.id} · ${item.name}`)}
+          </select>
+        </div>
+        <div class="actions">
+          <button class="button" data-action="generate" ${state.loading || !canGenerate ? "disabled" : ""}>${state.loading ? "Leyendo..." : "Generar reporte"}</button>
+          <button class="button ghost" data-action="open-drive" ${product ? "" : "disabled"}>Abrir archivo en Drive</button>
+        </div>
+        <p class="helper">${product ? `Archivo activo: <strong>${product.file}</strong>. ` : "Selecciona un producto para ver el archivo activo. "}La app lee la pestaña elegida desde Google Sheets publicado.</p>
       </div>
-      <div class="actions">
-        <button class="button" data-action="generate" ${state.loading || !canGenerate ? "disabled" : ""}>${state.loading ? "Leyendo..." : "Generar reporte"}</button>
-        <button class="button ghost" data-action="open-drive" ${product ? "" : "disabled"}>Abrir archivo en Drive</button>
+      <div class="sidebar-status">
+        <div class="status-pill"><span class="status-dot"></span>Sheets publicados</div>
+        <small>Datos oficiales de PL Cocina</small>
       </div>
-      <p class="helper">${product ? `Archivo activo: <strong>${product.file}</strong>. ` : "Selecciona un producto para ver el archivo activo. "}La app lee la pestaña elegida desde Google Sheets publicado; no necesita servidor ni backend.</p>
     </aside>`;
 }
 function appView() {
   return `
     <div class="shell ${state.sidebarCollapsed ? "is-sidebar-collapsed" : ""}">
-      <header class="topbar">
-        <div class="brand-mark" aria-label="Estadísticas">📊</div>
-        <div>
-          <h1 class="brand-title">Reportes de Pedidos y Producción</h1>
-          <p class="brand-subtitle">PL Cocina · Reportes desde Google Sheets</p>
-        </div>
-        <button class="menu-toggle" data-action="toggle-sidebar" aria-pressed="${state.sidebarCollapsed}">${state.sidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}</button>
-        <div class="status-pill"><span class="status-dot"></span>Sheets publicados</div>
-      </header>
       <div class="layout">
         ${sidebarView()}
-        <section class="main">${state.report ? reportView(state.report) : emptyView()}</section>
+        <section class="main">
+          <header class="workspace-head">
+            <div>
+              <p class="workspace-eyebrow">Control de producción</p>
+              <h1 class="brand-title">Reportes de Pedidos y Producción</h1>
+              <p class="workspace-subtitle">Consulta mensual desde Google Sheets</p>
+            </div>
+            <button class="menu-toggle" data-action="toggle-sidebar" aria-pressed="${state.sidebarCollapsed}">${state.sidebarCollapsed ? "Mostrar filtros" : "Ocultar filtros"}</button>
+          </header>
+          ${state.report ? reportView(state.report) : emptyView()}
+        </section>
       </div>
       ${state.toast ? `<div class="toast">${state.toast}</div>` : ""}
     </div>`;
