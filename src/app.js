@@ -29,11 +29,23 @@ const MONTHS = [
   ["DIC", "Diciembre"],
 ].map(([id, name]) => ({ id, name }));
 
-const SECTIONS = {
-  pedidos: { label: "Pedidos", color: "#e16b2d", unit: "cub" },
-  produccion: { label: "Producción", color: "#2563eb", unit: "cub" },
-  materias: { label: "Materias Primas", color: "#108a63", unit: "" },
+const CHART_PALETTE = {
+  magenta: { base: "#EC2192", light: "#F05FA9", dark: "#E0007A" },
+  cyan: { base: "#1796D3", light: "#20B8E5", dark: "#046EB8" },
+  violet: { base: "#93278D", light: "#B14AA6", dark: "#751D7B" },
+  indigo: { base: "#694D97", light: "#8265AE", dark: "#493A85" },
 };
+
+const SECTIONS = {
+  pedidos: { label: "Pedidos", color: CHART_PALETTE.magenta.base, unit: "cub" },
+  produccion: { label: "Producción", color: CHART_PALETTE.cyan.base, unit: "cub" },
+  materias: { label: "Materias Primas", color: CHART_PALETTE.violet.base, unit: "" },
+};
+
+function chartGradient(color) {
+  return Object.values(CHART_PALETTE).find(({ base }) => base.toLowerCase() === String(color).toLowerCase())
+    || { base: color, light: color, dark: color };
+}
 
 
 const PRODUCT_UNITS = {
@@ -115,8 +127,8 @@ const PRODUCT_COLUMN_OVERRIDES = {
     ollasCol: 16,
     rendimientoCol: 17,
     extraPedidoColumns: [
-      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1 KG)", index: 5, color: "#d97706" },
-      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (2 KG)", index: 7, color: "#7c3aed" },
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1 KG)", index: 5, color: CHART_PALETTE.violet.base },
+      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (2 KG)", index: 7, color: CHART_PALETTE.indigo.base },
     ],
     extraProduccionColumns: [
       { key: "produccion_chicas_1kg", label: "Producción en Bolsas Chicas (1 KG)", index: 13 },
@@ -146,7 +158,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
     rendimientoCol: 10,
     hidePedidoStockDetail: true,
     extraPedidoColumns: [
-      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas de 1.2 KG", index: 2, color: "#d97706" },
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas de 1.2 KG", index: 2, color: CHART_PALETTE.violet.base },
     ],
     extraProduccionColumns: [
       { key: "produccion_chicas_1kg", label: "Producción en Bolsas de 1.2 KG", index: 7 },
@@ -166,8 +178,8 @@ const PRODUCT_COLUMN_OVERRIDES = {
     rendimientoCol: 15,
     hidePedidoStockDetail: true,
     extraPedidoColumns: [
-      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1.6 KG)", index: 4, color: "#d97706" },
-      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (5 KG)", index: 5, color: "#7c3aed" },
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1.6 KG)", index: 4, color: CHART_PALETTE.violet.base },
+      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (5 KG)", index: 5, color: CHART_PALETTE.indigo.base },
     ],
     extraProduccionColumns: [
       { key: "produccion_chicas_1kg", label: "Producción en Bolsas Chicas (1.6 KG)", index: 11 },
@@ -198,8 +210,8 @@ const PRODUCT_COLUMN_OVERRIDES = {
     hidePedidoStockDetail: true,
     hideRendimientoSection: true,
     extraPedidoColumns: [
-      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1.6 KG)", index: 1, color: "#d97706" },
-      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (5 KG)", index: 2, color: "#7c3aed" },
+      { key: "pedidos_chicas_1kg", label: "Pedido en Bolsas Chicas (1.6 KG)", index: 1, color: CHART_PALETTE.violet.base },
+      { key: "pedidos_grandes_2kg", label: "Pedido en Bolsas Grandes (5 KG)", index: 2, color: CHART_PALETTE.indigo.base },
     ],
     extraProduccionColumns: [
       { key: "produccion_chicas_1kg", label: "Producción Bolsas Chicas (kits 1.6 KG)", index: 11 },
@@ -210,20 +222,20 @@ const PRODUCT_COLUMN_OVERRIDES = {
         key: "produccion_chicas_ingredientes",
         title: "Producción x Ingrediente (Bolsas Chicas)",
         columns: [
-          { key: "ensalada_chica_col_morada", label: "Col morada", index: 6, color: "#9700ff", note: "bolsas de 0.130 KG" },
-          { key: "ensalada_chica_col_blanca", label: "Col Blanca", index: 7, color: "#b7b7b7", note: "bolsas de 0.840 KG" },
-          { key: "ensalada_chica_zanahoria", label: "Zanahoria", index: 8, color: "#ff6b00", note: "bolsas de 0.200 KG" },
-          { key: "ensalada_chica_aderezo", label: "Aderezo", index: 9, color: "#d5a3bf", note: "bolsas de 0.500 KG" },
+          { key: "ensalada_chica_col_morada", label: "Col morada", index: 6, color: CHART_PALETTE.indigo.base, note: "bolsas de 0.130 KG" },
+          { key: "ensalada_chica_col_blanca", label: "Col Blanca", index: 7, color: CHART_PALETTE.cyan.base, note: "bolsas de 0.840 KG" },
+          { key: "ensalada_chica_zanahoria", label: "Zanahoria", index: 8, color: CHART_PALETTE.magenta.base, note: "bolsas de 0.200 KG" },
+          { key: "ensalada_chica_aderezo", label: "Aderezo", index: 9, color: CHART_PALETTE.violet.base, note: "bolsas de 0.500 KG" },
         ],
       },
       {
         key: "produccion_grandes_ingredientes",
         title: "Producción x Ingrediente (Bolsas Grandes)",
         columns: [
-          { key: "ensalada_grande_col_morada", label: "Col morada", index: 18, color: "#9700ff", note: "bolsas de 0.400 KG" },
-          { key: "ensalada_grande_col_blanca", label: "Col Blanca", index: 19, color: "#b7b7b7", note: "bolsas de 2.500 KG" },
-          { key: "ensalada_grande_zanahoria", label: "Zanahoria", index: 20, color: "#ff6b00", note: "bolsas de 0.600 KG" },
-          { key: "ensalada_grande_aderezo", label: "Aderezo", index: 21, color: "#d5a3bf", note: "bolsas de 1.500 KG" },
+          { key: "ensalada_grande_col_morada", label: "Col morada", index: 18, color: CHART_PALETTE.indigo.base, note: "bolsas de 0.400 KG" },
+          { key: "ensalada_grande_col_blanca", label: "Col Blanca", index: 19, color: CHART_PALETTE.cyan.base, note: "bolsas de 2.500 KG" },
+          { key: "ensalada_grande_zanahoria", label: "Zanahoria", index: 20, color: CHART_PALETTE.magenta.base, note: "bolsas de 0.600 KG" },
+          { key: "ensalada_grande_aderezo", label: "Aderezo", index: 21, color: CHART_PALETTE.violet.base, note: "bolsas de 1.500 KG" },
         ],
       },
     ],
@@ -354,7 +366,7 @@ const PRODUCT_COLUMN_OVERRIDES = {
     hideRendimientoSection: true,
     hideMateriasSection: true,
     extraPedidoColumns: [
-      { key: "pedidos_granel", label: "Pedidos en cajas de Granel", index: 4, color: "#7c3aed", unit: "cajas" },
+      { key: "pedidos_granel", label: "Pedidos en cajas de Granel", index: 4, color: CHART_PALETTE.indigo.base, unit: "cajas" },
     ],
     extraProduccionColumns: [
       { key: "costales_harina", label: "Costales de harina usados", index: 5 },
@@ -373,8 +385,8 @@ const PRODUCT_COLUMN_OVERRIDES = {
     hideRendimientoSection: true,
     hideMateriasSection: true,
     extraPedidoColumns: [
-      { key: "kilos_bolsas", label: "Pedidos por Kilos en Bolsas", index: 1, color: "#d97706", unit: "kg" },
-      { key: "tortilla_kileada", label: "Pedidos en Tortilla Kileada", index: 2, color: "#7c3aed", unit: "kg" },
+      { key: "kilos_bolsas", label: "Pedidos por Kilos en Bolsas", index: 1, color: CHART_PALETTE.violet.base, unit: "kg" },
+      { key: "tortilla_kileada", label: "Pedidos en Tortilla Kileada", index: 2, color: CHART_PALETTE.indigo.base, unit: "kg" },
     ],
     extraProduccionColumns: [
       { key: "harina_tio_tono", label: "Harina Tío Toño", index: 6 },
@@ -908,6 +920,8 @@ function format(value, digits = 0) {
 
 function barChart(rows, key, color, average, section) {
   if (!rows?.length) return "";
+  const gradient = chartGradient(color);
+  const gradientId = `barGradient-${String(section).replace(/[^a-z0-9_-]/gi, "-")}-${gradient.base.replace("#", "")}`;
   const width = 1100;
   const height = 336;
   const pad = { top: 64, right: 24, bottom: 38, left: 48 };
@@ -929,7 +943,7 @@ function barChart(rows, key, color, average, section) {
       return `
         <g class="chart-bar${selected ? " is-selected" : ""}" data-chart-bar="true" data-section="${section}" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${row.dia} ${row.fecha}: ${format(value)}">
           <rect class="bar-focus" x="${x - 2}" y="${pad.top}" width="${barW + 4}" height="${chartH}" rx="5"></rect>
-          <rect class="bar-shape" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="${color}"></rect>
+          <rect class="bar-shape" x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="url(#${gradientId})"></rect>
           <title>${row.dia} ${row.fecha}: ${format(value)}</title>
           <text x="${x + barW / 2}" y="${height - 12}" text-anchor="middle" font-size="10" fill="#69778a">${row.fecha}</text>
         </g>`;
@@ -943,7 +957,7 @@ function barChart(rows, key, color, average, section) {
     return `
       <button class="mobile-bar-row${selected ? " is-selected" : ""}" data-chart-bar="true" data-section="${section}" data-fecha="${row.fecha}" aria-label="${row.dia} ${row.fecha}: ${format(value)}">
         <strong class="mobile-bar-day">${row.fecha}</strong>
-        <span class="mobile-bar-track"><span class="mobile-bar-fill" style="width: ${widthPercent}%; background: ${color};"></span></span>
+        <span class="mobile-bar-track"><span class="mobile-bar-fill" style="width: ${widthPercent}%; background: linear-gradient(90deg, ${gradient.light} 0%, ${gradient.base} 52%, ${gradient.dark} 100%);"></span></span>
         <b class="mobile-bar-value">${format(value)}</b>
       </button>`;
   }).join("");
@@ -951,6 +965,13 @@ function barChart(rows, key, color, average, section) {
   return `
     <div class="chart-scroll desktop-bar-chart" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Gráfica de ${key}">
+      <defs>
+        <linearGradient id="${gradientId}" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="${gradient.light}"></stop>
+          <stop offset="52%" stop-color="${gradient.base}"></stop>
+          <stop offset="100%" stop-color="${gradient.dark}"></stop>
+        </linearGradient>
+      </defs>
       <g aria-label="Media ${format(average, 1)}">
         <rect x="${pad.left}" y="8" width="210" height="44" rx="10" fill="#f0f7f4" stroke="${color}" stroke-width="1.5"></rect>
         <text x="${pad.left + 16}" y="25" font-size="11" font-weight="900" letter-spacing="1" fill="#526071">MEDIA</text>
@@ -984,6 +1005,16 @@ function stackedIngredientChart(chart) {
   const maxValue = Math.max(...totals) * 1.16 || 1;
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => Math.round((maxValue * ratio) / 10) * 10);
   const selectedFecha = state.selectedDay?.section === chart.key ? state.selectedDay.fecha : null;
+  const gradientIdFor = (column) => `stackGradient-${String(chart.key).replace(/[^a-z0-9_-]/gi, "-")}-${String(column.key).replace(/[^a-z0-9_-]/gi, "-")}`;
+  const gradientDefs = columns.map((column) => {
+    const gradient = chartGradient(column.color);
+    return `
+      <linearGradient id="${gradientIdFor(column)}" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="${gradient.light}"></stop>
+        <stop offset="52%" stop-color="${gradient.base}"></stop>
+        <stop offset="100%" stop-color="${gradient.dark}"></stop>
+      </linearGradient>`;
+  }).join("");
   const legend = columns.slice().reverse().map((column, index) => {
     const x = pad.left + 250 + index * 150;
     const y = height - 24;
@@ -1010,7 +1041,7 @@ function stackedIngredientChart(chart) {
       yCursor = y;
       const labelFill = column.label === "Col Blanca" || column.label === "Aderezo" ? "#111827" : "#ffffff";
       return `
-        <rect x="${x}" y="${y}" width="${barW}" height="${Math.max(0, h)}" fill="${column.color}"></rect>
+        <rect x="${x}" y="${y}" width="${barW}" height="${Math.max(0, h)}" fill="url(#${gradientIdFor(column)})"></rect>
         ${value && h > 13 ? `<text x="${x + barW / 2}" y="${y + h / 2 + 5}" text-anchor="middle" font-size="12" font-weight="900" fill="${labelFill}">${format(value)}</text>` : ""}`;
     }).join("");
     return `
@@ -1027,7 +1058,8 @@ function stackedIngredientChart(chart) {
     const selected = selectedFecha === row.fecha;
     const segments = columns.map((column) => {
       const segmentWidth = (number(row[column.key]) / maxValue) * 100;
-      return segmentWidth ? `<span style="width: ${segmentWidth}%; background: ${column.color};"></span>` : "";
+      const gradient = chartGradient(column.color);
+      return segmentWidth ? `<span style="width: ${segmentWidth}%; background: linear-gradient(90deg, ${gradient.light} 0%, ${gradient.base} 52%, ${gradient.dark} 100%);"></span>` : "";
     }).join("");
     return `
       <button class="mobile-bar-row${selected ? " is-selected" : ""}" data-chart-stacked="true" data-section="${chart.key}" data-fecha="${row.fecha}" aria-label="${chart.title}: ${row.dia} ${row.fecha}, total ${format(total)}">
@@ -1043,6 +1075,7 @@ function stackedIngredientChart(chart) {
   return `
     <div class="chart-scroll desktop-bar-chart" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart stacked-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${chart.title}">
+      <defs>${gradientDefs}</defs>
       <text x="${pad.left}" y="36" font-size="22" font-weight="800" fill="#526071">${chart.title.toUpperCase()}</text>
       ${grid}
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${pad.top + chartH}" y2="${pad.top + chartH}" stroke="#202938" stroke-width="1.5"></line>
@@ -1098,6 +1131,7 @@ function lineChart(rows) {
   const bandTop = yFor(mean + sigma);
   const bandBottom = yFor(mean - sigma);
   const selectedFecha = state.selectedDay?.section === "rendimiento" ? state.selectedDay.fecha : null;
+  const lineColor = CHART_PALETTE.indigo.base;
 
   const dots = valid
     .map((row, index) => {
@@ -1105,7 +1139,7 @@ function lineChart(rows) {
       const selected = selectedFecha === row.fecha;
       return `
         <g class="chart-point${selected ? " is-selected" : ""}" data-chart-point="true" data-section="rendimiento" data-fecha="${row.fecha}" tabindex="0" role="button" aria-label="${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)}">
-          <circle cx="${xFor(index)}" cy="${yFor(row.rendimiento)}" r="${selected ? 7 : out ? 5 : 4}" fill="${out ? "#cb3d3d" : "#6255d9"}" stroke="#fff" stroke-width="2"></circle>
+          <circle cx="${xFor(index)}" cy="${yFor(row.rendimiento)}" r="${selected ? 7 : out ? 5 : 4}" fill="${out ? "#cb3d3d" : lineColor}" stroke="#fff" stroke-width="2"></circle>
           <title>${row.dia} ${row.fecha}: ${row.rendimiento.toFixed(2)}</title>
           <text x="${xFor(index)}" y="${height - 12}" text-anchor="middle" font-size="10" fill="#69778a">${row.fecha}</text>
         </g>`;
@@ -1116,20 +1150,20 @@ function lineChart(rows) {
     <div class="chart-scroll" role="region" aria-label="Desliza horizontalmente para explorar la gráfica" tabindex="0">
     <svg class="chart rendimiento-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Rendimiento diario">
       <g aria-label="Media ${mean.toFixed(2)}; coeficiente de variación ${cv.toFixed(1)} por ciento">
-        <rect x="${pad.left}" y="10" width="310" height="54" rx="11" fill="#f2f0ff" stroke="#6255d9" stroke-width="1.5"></rect>
-        <text x="${pad.left + 16}" y="29" font-size="11" font-weight="900" letter-spacing="1" fill="#6255d9">MEDIA DE RENDIMIENTO</text>
+        <rect x="${pad.left}" y="10" width="310" height="54" rx="11" fill="#f5f0fa" stroke="${lineColor}" stroke-width="1.5"></rect>
+        <text x="${pad.left + 16}" y="29" font-size="11" font-weight="900" letter-spacing="1" fill="${lineColor}">MEDIA DE RENDIMIENTO</text>
         <text x="${pad.left + 16}" y="53" font-size="22" font-weight="900" fill="#172033">${mean.toFixed(2)}</text>
         <text x="${pad.left + 116}" y="52" font-size="14" font-weight="800" fill="#526071">CV ${cv.toFixed(1)}%</text>
       </g>
-      <rect x="${pad.left}" y="${bandTop}" width="${chartW}" height="${bandBottom - bandTop}" fill="#6255d9" opacity="0.08"></rect>
+      <rect x="${pad.left}" y="${bandTop}" width="${chartW}" height="${bandBottom - bandTop}" fill="${lineColor}" opacity="0.08"></rect>
       <line x1="${pad.left}" x2="${width - pad.right}" y1="${yFor(mean)}" y2="${yFor(mean)}" stroke="#526071" stroke-dasharray="7 5" stroke-width="2"></line>
-      <path d="${path}" fill="none" stroke="#6255d9" stroke-width="3"></path>
+      <path d="${path}" fill="none" stroke="${lineColor}" stroke-width="3"></path>
       ${dots}
     </svg>
     </div>`;
 }
 
-function monthlyTrendChart(rows, key = "pedidos", color = "#108a63", unit = "pedidos") {
+function monthlyTrendChart(rows, key = "pedidos", color = CHART_PALETTE.magenta.base, unit = "pedidos") {
   if (!rows?.length) return "";
   const width = 1100;
   const height = 300;
@@ -1237,25 +1271,25 @@ function monthlyTrendPanel(report) {
         ? "Fiebre mensual de pedidos de Bidones"
         : "Fiebre mensual de pedidos en KG",
     unit: report.units.pedido,
-    color: "#108a63",
+    color: CHART_PALETTE.magenta.base,
   };
   const chica = {
     key: "pedidosChicas",
     title: report.product.id === "05" ? "Fiebre mensual de pedidos en Bolsas de 1.2 KG" : "Fiebre mensual de pedidos en Bolsas Chicas de 1.6 KG",
     unit: "bolsas",
-    color: "#d97706",
+    color: CHART_PALETTE.violet.base,
   };
   const grande = {
     key: "pedidosGrandes",
     title: report.product.id === "04" ? "Fiebre mensual de pedidos en Bolsas Grandes" : "Fiebre mensual de pedidos en Bolsas Grandes de 5 KG",
     unit: "bolsas",
-    color: "#7c3aed",
+    color: CHART_PALETTE.indigo.base,
   };
-  const aceitePl3 = { key: "pedidosPl3", title: "Fiebre mensual de Bidones hacia PL3", unit: "bidones", color: "#2563eb" };
-  const postrePlog = { key: "pedidosPlog", title: "Fiebre mensual de pedidos PLOG", unit: "piezas", color: "#2563eb" };
-  const totopoProduccion = { key: "produccion", title: "Fiebre mensual de Producción (cajas producidas)", unit: "cajas", color: "#2563eb" };
-  const tortillaProduccion = { key: "produccion", title: "Fiebre mensual de Producción de Tortilla", unit: "kg", color: "#2563eb" };
-  const tortillaCostales = { key: "costalesHarina", title: "Fiebre mensual de Consumo de Costales de Harina", unit: "costales", color: "#d97706" };
+  const aceitePl3 = { key: "pedidosPl3", title: "Fiebre mensual de Bidones hacia PL3", unit: "bidones", color: CHART_PALETTE.cyan.base };
+  const postrePlog = { key: "pedidosPlog", title: "Fiebre mensual de pedidos PLOG", unit: "piezas", color: CHART_PALETTE.cyan.base };
+  const totopoProduccion = { key: "produccion", title: "Fiebre mensual de Producción (cajas producidas)", unit: "cajas", color: CHART_PALETTE.cyan.base };
+  const tortillaProduccion = { key: "produccion", title: "Fiebre mensual de Producción de Tortilla", unit: "kg", color: CHART_PALETTE.cyan.base };
+  const tortillaCostales = { key: "costalesHarina", title: "Fiebre mensual de Consumo de Costales de Harina", unit: "costales", color: CHART_PALETTE.violet.base };
   const hasChicas = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_chicas_1kg");
   const hasGrandes = report.kpis.extraPedidoTotals?.some((item) => item.key === "pedidos_grandes_2kg");
   const configs = report.product.id === "07" ? [] : [base];
@@ -1635,7 +1669,7 @@ function reportView(report) {
             ${report.product.id === "12" ? `
             <section class="panel">
               <h3 class="panel-title">Costales de Harina producidos</h3>
-              ${barChart(report.produccion, "costales_harina", "#d97706", avg(report.produccion, "costales_harina"), "costales_harina")}
+              ${barChart(report.produccion, "costales_harina", CHART_PALETTE.violet.base, avg(report.produccion, "costales_harina"), "costales_harina")}
               ${selectedMetricDetail(report.produccion, "costales_harina", "costales_harina", "Cantidad", "costales")}
             </section>` : ""}
             <section class="panel">

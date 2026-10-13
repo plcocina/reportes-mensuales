@@ -13,6 +13,18 @@
   --green: #108a63;
   --violet: #6255d9;
   --red: #cb3d3d;
+  --chart-magenta-light: #f05fa9;
+  --chart-magenta: #ec2192;
+  --chart-magenta-dark: #e0007a;
+  --chart-cyan-light: #20b8e5;
+  --chart-cyan: #1796d3;
+  --chart-cyan-dark: #046eb8;
+  --chart-violet-light: #b14aa6;
+  --chart-violet: #93278d;
+  --chart-violet-dark: #751d7b;
+  --chart-indigo-light: #8265ae;
+  --chart-indigo: #694d97;
+  --chart-indigo-dark: #493a85;
   --shadow: 0 18px 45px rgba(43, 41, 17, 0.12);
 }
 
