@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "plcocina-apps"
+  },
+  "targets": {
+    "plcocina-apps": {
+      "hosting": {
+        "reportes": [
+          "reportes-mensuales-2026"
+        ]
+      }
+    }
+  }
+}
