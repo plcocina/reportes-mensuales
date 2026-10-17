@@ -233,10 +233,10 @@ button {
 }
 
 .sidebar-nav-icon {
-  width: 21px;
-  height: 21px;
-  flex: 0 0 21px;
-  color: var(--brand-yellow);
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  color: currentColor;
 }
 
 .sidebar-nav-title span {
